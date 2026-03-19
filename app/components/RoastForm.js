@@ -1,37 +1,56 @@
 "use client";
 import { useState } from "react";
 import RoastCard from "./RoastCard";
-
-const CATEGORIES = ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck"];
-const FIRE_LEVELS = [
-  { label: "Nhẹ nhàng 😊", value: "gentle" },
-  { label: "Trung bình 🔥", value: "medium" },
-  { label: "Thiêu rụi 💀", value: "savage" },
-];
+import { useLanguage } from "../lib/LanguageContext";
 
 export default function RoastForm() {
-  const [image, setImage] = useState(null); // base64
-  const [imagePreview, setImagePreview] = useState(null); // url preview
-
-  function handleImageChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setImagePreview(ev.target.result);
-      // Tách phần base64 thuần (bỏ "data:image/png;base64,")
-      setImage(ev.target.result.split(",")[1]);
-    };
-    reader.readAsDataURL(file);
-  }
+  const { t, lang } = useLanguage();
   const [category, setCategory] = useState("Design / UI");
   const [content, setContent] = useState("");
   const [fireLevel, setFireLevel] = useState("medium");
   const [loading, setLoading] = useState(false);
   const [roast, setRoast] = useState(null);
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  const CATEGORIES = ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck"];
+  const FIRE_LEVELS = [
+    { label: t.gentle, value: "gentle" },
+    { label: t.medium, value: "medium" },
+    { label: t.savage, value: "savage" },
+  ];
+
+ function handleImageChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const img = new Image();
+
+  img.onload = () => {
+    // Giới hạn tối đa 800px
+    const maxSize = 800;
+    let w = img.width;
+    let h = img.height;
+    if (w > maxSize || h > maxSize) {
+      if (w > h) { h = (h / w) * maxSize; w = maxSize; }
+      else { w = (w / h) * maxSize; h = maxSize; }
+    }
+    canvas.width = w;
+    canvas.height = h;
+    ctx.drawImage(img, 0, 0, w, h);
+
+    const resized = canvas.toDataURL("image/jpeg", 0.7); // nén 70%
+    setImagePreview(resized);
+    setImage(resized.split(",")[1]);
+  };
+
+  img.src = URL.createObjectURL(file);
+}
 
   async function handleSubmit() {
-    if (!content.trim()) return;
+    if (!content.trim() && !image) return;
     setLoading(true);
     setRoast(null);
 
@@ -39,11 +58,9 @@ export default function RoastForm() {
       const res = await fetch("/api/roast", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, category, fireLevel, image }),
+        body: JSON.stringify({ content, category, fireLevel, image, lang }),
       });
-
       if (!res.ok) throw new Error("API lỗi");
-
       const data = await res.json();
       setRoast(data);
     } catch (err) {
@@ -53,11 +70,12 @@ export default function RoastForm() {
       setLoading(false);
     }
   }
+
   return (
     <div className="space-y-4">
       {/* Category */}
       <div>
-        <label className="text-sm text-gray-500 mb-1 block">Loại work</label>
+        <label className="text-sm text-gray-500 mb-1 block">{t.labelCategory}</label>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
@@ -71,57 +89,40 @@ export default function RoastForm() {
         </select>
       </div>
 
+      {/* Upload ảnh */}
+      <div>
+        <label className="text-sm text-gray-500 mb-1 block">{t.labelImage}</label>
+        <label className="flex flex-col items-center justify-center w-full
+                           h-28 border-2 border-dashed border-gray-200
+                           rounded-xl cursor-pointer hover:border-orange-300
+                           hover:bg-orange-50 transition-colors">
+          {imagePreview ? (
+            <img src={imagePreview} alt="preview"
+                 className="h-full w-full object-contain rounded-xl p-1" />
+          ) : (
+            <div className="text-center">
+              <p className="text-2xl mb-1">🖼️</p>
+              <p className="text-xs text-gray-400">{t.clickImage}</p>
+            </div>
+          )}
+          <input type="file" accept="image/*"
+                 onChange={handleImageChange} className="hidden" />
+        </label>
+        {imagePreview && (
+          <button onClick={() => { setImage(null); setImagePreview(null); }}
+                  className="text-xs text-gray-400 hover:text-red-400 mt-1">
+            {t.removeImage}
+          </button>
+        )}
+      </div>
+
       {/* Content */}
       <div>
-        <label className="text-sm text-gray-500 mb-1 block">
-          Nội dung cần roast
-        </label>
-        {/* Upload ảnh */}
-        <div>
-          <label className="text-sm text-gray-500 mb-1 block">
-            Upload ảnh (tuỳ chọn)
-          </label>
-          <label
-            className="flex flex-col items-center justify-center w-full
-                     h-28 border-2 border-dashed border-gray-200
-                     rounded-xl cursor-pointer hover:border-orange-300
-                     hover:bg-orange-50 transition-colors"
-          >
-            {imagePreview ? (
-              <img
-                src={imagePreview}
-                alt="preview"
-                className="h-full w-full object-contain rounded-xl p-1"
-              />
-            ) : (
-              <div className="text-center">
-                <p className="text-2xl mb-1">🖼️</p>
-                <p className="text-xs text-gray-400">Click để chọn ảnh</p>
-              </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-            />
-          </label>
-          {imagePreview && (
-            <button
-              onClick={() => {
-                setImage(null);
-                setImagePreview(null);
-              }}
-              className="text-xs text-gray-400 hover:text-red-400 mt-1"
-            >
-              Xoá ảnh
-            </button>
-          )}
-        </div>
+        <label className="text-sm text-gray-500 mb-1 block">{t.labelContent}</label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Paste link, mô tả, hoặc dán code của bạn vào đây..."
+          placeholder={t.placeholder}
           rows={5}
           className="w-full border border-gray-200 rounded-xl px-3 py-2
                      text-sm bg-white focus:outline-none focus:ring-2
@@ -131,20 +132,17 @@ export default function RoastForm() {
 
       {/* Fire level */}
       <div>
-        <label className="text-sm text-gray-500 mb-1 block">
-          Mức độ tàn nhẫn
-        </label>
+        <label className="text-sm text-gray-500 mb-1 block">{t.labelFireLevel}</label>
         <div className="flex gap-2">
           {FIRE_LEVELS.map((f) => (
             <button
               key={f.value}
               onClick={() => setFireLevel(f.value)}
-              className={`flex-1 py-2 text-xs rounded-xl border transition-colors
-                ${
-                  fireLevel === f.value
-                    ? "bg-orange-50 border-orange-300 text-orange-800 font-medium"
-                    : "border-gray-200 text-gray-500 hover:bg-gray-50"
-                }`}
+              className={`flex-1 py-2 text-xs rounded-xl border transition-colors ${
+                fireLevel === f.value
+                  ? "bg-orange-50 border-orange-300 text-orange-800 font-medium"
+                  : "border-gray-200 text-gray-500 hover:bg-gray-50"
+              }`}
             >
               {f.label}
             </button>
@@ -155,15 +153,14 @@ export default function RoastForm() {
       {/* Submit */}
       <button
         onClick={handleSubmit}
-        disabled={loading || !content.trim()}
+        disabled={loading || (!content.trim() && !image)}
         className="w-full py-3 rounded-xl bg-orange-500 text-white font-medium
                    text-sm hover:bg-orange-600 disabled:opacity-40
                    disabled:cursor-not-allowed transition-colors"
       >
-        {loading ? "Đang roast..." : "Roast ngay! 🔥"}
+        {loading ? t.loading : t.submit}
       </button>
 
-      {/* Result */}
       {roast && <RoastCard roast={roast} />}
     </div>
   );
