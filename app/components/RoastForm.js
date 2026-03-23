@@ -13,41 +13,50 @@ export default function RoastForm() {
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  const CATEGORIES = ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck"];
+  const CATEGORIES = {
+    vi: ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck"],
+    en: ["Design / UI", "Code", "Article", "CV", "Pitch deck"],
+    ja: ["Design / UI", "Code", "記事", "履歴書", "ピッチデック"],
+  }[lang] ?? ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck"];
   const FIRE_LEVELS = [
     { label: t.gentle, value: "gentle" },
     { label: t.medium, value: "medium" },
     { label: t.savage, value: "savage" },
   ];
 
- function handleImageChange(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+  function handleImageChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  const img = new Image();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
 
-  img.onload = () => {
-    // Giới hạn tối đa 800px
-    const maxSize = 800;
-    let w = img.width;
-    let h = img.height;
-    if (w > maxSize || h > maxSize) {
-      if (w > h) { h = (h / w) * maxSize; w = maxSize; }
-      else { w = (w / h) * maxSize; h = maxSize; }
-    }
-    canvas.width = w;
-    canvas.height = h;
-    ctx.drawImage(img, 0, 0, w, h);
+    img.onload = () => {
+      // Giới hạn tối đa 800px
+      const maxSize = 800;
+      let w = img.width;
+      let h = img.height;
+      if (w > maxSize || h > maxSize) {
+        if (w > h) {
+          h = (h / w) * maxSize;
+          w = maxSize;
+        } else {
+          w = (w / h) * maxSize;
+          h = maxSize;
+        }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
 
-    const resized = canvas.toDataURL("image/jpeg", 0.7); // nén 70%
-    setImagePreview(resized);
-    setImage(resized.split(",")[1]);
-  };
+      const resized = canvas.toDataURL("image/jpeg", 0.7); // nén 70%
+      setImagePreview(resized);
+      setImage(resized.split(",")[1]);
+    };
 
-  img.src = URL.createObjectURL(file);
-}
+    img.src = URL.createObjectURL(file);
+  }
 
   async function handleSubmit() {
     if (!content.trim() && !image) return;
@@ -75,7 +84,9 @@ export default function RoastForm() {
     <div className="space-y-4">
       {/* Category */}
       <div>
-        <label className="text-sm text-gray-500 mb-1 block">{t.labelCategory}</label>
+        <label className="text-sm text-gray-500 mb-1 block">
+          {t.labelCategory}
+        </label>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
@@ -91,26 +102,42 @@ export default function RoastForm() {
 
       {/* Upload ảnh */}
       <div>
-        <label className="text-sm text-gray-500 mb-1 block">{t.labelImage}</label>
-        <label className="flex flex-col items-center justify-center w-full
+        <label className="text-sm text-gray-500 mb-1 block">
+          {t.labelImage}
+        </label>
+        <label
+          className="flex flex-col items-center justify-center w-full
                            h-28 border-2 border-dashed border-gray-200
                            rounded-xl cursor-pointer hover:border-orange-300
-                           hover:bg-orange-50 transition-colors">
+                           hover:bg-orange-50 transition-colors"
+        >
           {imagePreview ? (
-            <img src={imagePreview} alt="preview"
-                 className="h-full w-full object-contain rounded-xl p-1" />
+            <img
+              src={imagePreview}
+              alt="preview"
+              className="h-full w-full object-contain rounded-xl p-1"
+            />
           ) : (
             <div className="text-center">
               <p className="text-2xl mb-1">🖼️</p>
               <p className="text-xs text-gray-400">{t.clickImage}</p>
             </div>
           )}
-          <input type="file" accept="image/*"
-                 onChange={handleImageChange} className="hidden" />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+          />
         </label>
         {imagePreview && (
-          <button onClick={() => { setImage(null); setImagePreview(null); }}
-                  className="text-xs text-gray-400 hover:text-red-400 mt-1">
+          <button
+            onClick={() => {
+              setImage(null);
+              setImagePreview(null);
+            }}
+            className="text-xs text-gray-400 hover:text-red-400 mt-1"
+          >
             {t.removeImage}
           </button>
         )}
@@ -118,7 +145,9 @@ export default function RoastForm() {
 
       {/* Content */}
       <div>
-        <label className="text-sm text-gray-500 mb-1 block">{t.labelContent}</label>
+        <label className="text-sm text-gray-500 mb-1 block">
+          {t.labelContent}
+        </label>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -132,7 +161,9 @@ export default function RoastForm() {
 
       {/* Fire level */}
       <div>
-        <label className="text-sm text-gray-500 mb-1 block">{t.labelFireLevel}</label>
+        <label className="text-sm text-gray-500 mb-1 block">
+          {t.labelFireLevel}
+        </label>
         <div className="flex gap-2">
           {FIRE_LEVELS.map((f) => (
             <button

@@ -12,8 +12,12 @@ export default function Home() {
       <header className="bg-white border-b border-gray-100 px-4 py-3">
         <div className="max-w-xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-orange-100 flex items-center
-                            justify-center text-sm">🔥</div>
+            <div
+              className="w-7 h-7 rounded-lg bg-orange-100 flex items-center
+                            justify-center text-sm"
+            >
+              🔥
+            </div>
             <span className="font-medium text-gray-900">{t.appName}</span>
           </div>
           <div className="flex items-center gap-3">
@@ -29,11 +33,14 @@ export default function Home() {
                       : "text-gray-400 hover:text-gray-600"
                   }`}
                 >
-                  {l === "vi" ? "🇻🇳" : l === "en" ? "🇬🇧" : "🇯🇵"}
+                  {l === "vi" ? "VN" : l === "en" ? "EN" : "JP"}
                 </button>
               ))}
             </div>
-            <Link href="/feed" className="text-sm text-orange-500 hover:underline">
+            <Link
+              href="/feed"
+              className="text-sm text-orange-500 hover:underline"
+            >
               {t.viewFeed}
             </Link>
           </div>
