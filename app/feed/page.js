@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 import FeedClient from "./FeedClient";
 import Link from "next/link";
 
+export const revalidate = 0; 
 export default async function FeedPage() {
   const { data: roasts } = await supabase
     .from("roasts")
