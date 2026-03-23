@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import { useLanguage } from "../lib/LanguageContext";
 
 export default function FeedClient({ roasts: initial }) {
-  const { t, lang } = useLanguage();
+  const { t, lang, setLang } = useLanguage();
   const [roasts, setRoasts] = useState(initial);
 
   async function handleVote(id, currentVotes) {
@@ -32,6 +32,25 @@ export default function FeedClient({ roasts: initial }) {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-medium text-gray-900">{t.feedTitle}</h2>
+        <div className="flex gap-1">
+          {["vi", "en", "ja"].map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              className={`text-xs px-2 py-1 rounded-lg transition-colors ${
+                lang === l
+                  ? "bg-orange-100 text-orange-700 font-medium"
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              {l === "vi" ? "VN" : l === "en" ? "EN" : "JP"}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {roasts.length === 0 && (
         <p className="text-gray-400 text-sm text-center py-10">{t.emptyFeed}</p>
       )}

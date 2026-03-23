@@ -14,25 +14,19 @@ export default async function FeedPage() {
       <header className="bg-white border-b border-gray-100 px-4 py-3">
         <div className="max-w-xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div
-              className="w-7 h-7 rounded-lg bg-orange-100 flex items-center
-                            justify-center text-sm"
-            >
+            <div className="w-7 h-7 rounded-lg bg-orange-100 flex items-center
+                            justify-center text-sm">
               🔥
             </div>
             <span className="font-medium text-gray-900">Roast My Work</span>
           </div>
-          <Link
-            href="/feed"
-            className="text-sm text-orange-500 hover:underline"
-          >
-            Xem feed 🔥
+          <Link href="/" className="text-sm text-orange-500 hover:underline">
+            + Roast mới
           </Link>
         </div>
       </header>
 
       <section className="max-w-xl mx-auto px-4 py-6">
-        <h2 className="font-medium text-gray-900 mb-4">Feed cộng đồng 🔥</h2>
         <FeedClient roasts={roasts ?? []} />
       </section>
     </main>
