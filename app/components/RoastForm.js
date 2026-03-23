@@ -91,7 +91,7 @@ export default function RoastForm() {
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className="w-full border border-gray-200 rounded-xl px-3 py-2
-                     text-sm bg-white focus:outline-none focus:ring-2
+                     text-sm bg-white text-gray-900 focus:outline-none focus:ring-2
                      focus:ring-orange-200"
         >
           {CATEGORIES.map((c) => (
@@ -154,7 +154,7 @@ export default function RoastForm() {
           placeholder={t.placeholder}
           rows={5}
           className="w-full border border-gray-200 rounded-xl px-3 py-2
-                     text-sm bg-white focus:outline-none focus:ring-2
+                     text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2
                      focus:ring-orange-200 resize-none"
         />
       </div>
