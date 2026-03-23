@@ -83,7 +83,7 @@ OUTPUT: JSON hợp lệ, KHÔNG markdown, KHÔNG backtick:
             ? "meta-llama/llama-4-scout-17b-16e-instruct"
             : "llama-3.3-70b-versatile",
           messages: [{ role: "system", content: systemPrompt }, userMessage],
-          max_tokens: 1000,
+          max_tokens: 2000,
         }),
       },
     );
@@ -112,7 +112,7 @@ ${JSON.stringify(originalResult)}`;
         body: JSON.stringify({
           model: "llama-3.3-70b-versatile",
           messages: [{ role: "user", content: translatePrompt }],
-          max_tokens: 1000,
+          max_tokens: 2000,
         }),
       });
       const d = await r.json();
