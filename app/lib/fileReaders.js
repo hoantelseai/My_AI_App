@@ -2,7 +2,7 @@ export async function readDocx(file) {
   const mammoth = (await import("mammoth")).default;
   const arrayBuffer = await file.arrayBuffer();
   const result = await mammoth.extractRawText({ arrayBuffer });
-  return result.value.substring(0, 3000);
+  return result.value.substring(0, 5000);
 }
 
 export async function readXlsx(file) {
@@ -17,7 +17,7 @@ export async function readXlsx(file) {
     text += XLSX.utils.sheet_to_csv(sheet);
     text += "\n\n";
   });
-  return text.substring(0, 3000);
+  return text.substring(0, 5000);
 }
 
 export async function readPdf(file) {
@@ -31,5 +31,5 @@ export async function readPdf(file) {
     const content = await page.getTextContent();
     text += content.items.map((item) => item.str).join(" ") + "\n";
   }
-  return text.substring(0, 3000);
+  return text.substring(0, 5000);
 }
