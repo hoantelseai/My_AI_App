@@ -6,9 +6,10 @@ export async function readDocx(file) {
 }
 
 export async function readXlsx(file) {
-  const XLSX = (await import("xlsx")).default;
+  const XLSX = await import("xlsx");
   const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  const data = new Uint8Array(arrayBuffer);
+  const workbook = XLSX.read(data, { type: "array" });
   let text = "";
   workbook.SheetNames.forEach((name) => {
     const sheet = workbook.Sheets[name];
@@ -20,8 +21,8 @@ export async function readXlsx(file) {
 }
 
 export async function readPdf(file) {
-  const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   let text = "";

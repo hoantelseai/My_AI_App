@@ -22,7 +22,14 @@ export default function RoastForm() {
     vi: ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck", "CSV Data"],
     en: ["Design / UI", "Code", "Article", "CV", "Pitch deck", "CSV Data"],
     ja: ["Design / UI", "Code", "記事", "履歴書", "ピッチデック", "CSV Data"],
-  }[lang] ?? ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck", "CSV Data"];
+  }[lang] ?? [
+    "Design / UI",
+    "Code",
+    "Bài viết",
+    "CV",
+    "Pitch deck",
+    "CSV Data",
+  ];
 
   const FIRE_LEVELS = [
     { label: t.gentle, value: "gentle" },
@@ -41,8 +48,13 @@ export default function RoastForm() {
       let w = img.width;
       let h = img.height;
       if (w > maxSize || h > maxSize) {
-        if (w > h) { h = (h / w) * maxSize; w = maxSize; }
-        else { w = (w / h) * maxSize; h = maxSize; }
+        if (w > h) {
+          h = (h / w) * maxSize;
+          w = maxSize;
+        } else {
+          w = (w / h) * maxSize;
+          h = maxSize;
+        }
       }
       canvas.width = w;
       canvas.height = h;
@@ -75,8 +87,8 @@ export default function RoastForm() {
       setCsvData(text);
       setContent(text);
     } catch (err) {
-      alert("Không đọc được file, thử lại nhé!");
-      console.error(err);
+      console.error("Chi tiết lỗi file:", err);
+      alert(`Không đọc được file: ${err.message}`);
     }
   }
 
@@ -111,7 +123,10 @@ export default function RoastForm() {
     <div className="space-y-4">
       {/* Category */}
       <div>
-        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
+        <label
+          className="text-sm mb-1 block"
+          style={{ color: "var(--text-muted)" }}
+        >
           {t.labelCategory}
         </label>
         <select
@@ -119,20 +134,32 @@ export default function RoastForm() {
           onChange={(e) => setCategory(e.target.value)}
           className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none
                      focus:ring-2 focus:ring-orange-200"
-          style={{ backgroundColor: "var(--bg-card)", color: "var(--text)", borderColor: "var(--border)" }}
+          style={{
+            backgroundColor: "var(--bg-card)",
+            color: "var(--text)",
+            borderColor: "var(--border)",
+          }}
         >
-          {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+          {CATEGORIES.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
         </select>
       </div>
 
       {/* File Upload (CSV, Excel, Word, PDF) */}
       <div>
-        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
+        <label
+          className="text-sm mb-1 block"
+          style={{ color: "var(--text-muted)" }}
+        >
           Upload file (tuỳ chọn)
         </label>
         <div
           onDrop={handleDrop}
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
           onDragLeave={() => setIsDragging(false)}
           onClick={() => fileInputRef.current?.click()}
           className="w-full border-2 border-dashed rounded-xl p-4 text-center
@@ -144,10 +171,16 @@ export default function RoastForm() {
         >
           {csvName ? (
             <div>
-              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "var(--text)" }}
+              >
                 📄 {csvName}
               </p>
-              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--text-muted)" }}
+              >
                 {csvData?.split("\n").length} dòng đã load
               </p>
               <button
@@ -182,29 +215,46 @@ export default function RoastForm() {
 
       {/* Upload ảnh */}
       <div>
-        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
+        <label
+          className="text-sm mb-1 block"
+          style={{ color: "var(--text-muted)" }}
+        >
           {t.labelImage}
         </label>
         <label
           className="flex flex-col items-center justify-center w-full
                      h-28 border-2 border-dashed rounded-xl cursor-pointer
                      hover:border-orange-300 transition-colors"
-          style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-card)" }}
+          style={{
+            borderColor: "var(--border)",
+            backgroundColor: "var(--bg-card)",
+          }}
         >
           {imagePreview ? (
-            <img src={imagePreview} alt="preview"
-                 className="h-full w-full object-contain rounded-xl p-1" />
+            <img
+              src={imagePreview}
+              alt="preview"
+              className="h-full w-full object-contain rounded-xl p-1"
+            />
           ) : (
             <div className="text-center">
               <p className="text-2xl mb-1">🖼️</p>
               <p className="text-xs text-gray-400">{t.clickImage}</p>
             </div>
           )}
-          <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+          />
         </label>
         {imagePreview && (
           <button
-            onClick={() => { setImage(null); setImagePreview(null); }}
+            onClick={() => {
+              setImage(null);
+              setImagePreview(null);
+            }}
             className="text-xs text-gray-400 hover:text-red-400 mt-1"
           >
             {t.removeImage}
@@ -214,7 +264,10 @@ export default function RoastForm() {
 
       {/* Content */}
       <div>
-        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
+        <label
+          className="text-sm mb-1 block"
+          style={{ color: "var(--text-muted)" }}
+        >
           {t.labelContent}
         </label>
         <textarea
@@ -224,13 +277,20 @@ export default function RoastForm() {
           rows={5}
           className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none
                      focus:ring-2 focus:ring-orange-200 resize-none"
-          style={{ backgroundColor: "var(--bg-card)", color: "var(--text)", borderColor: "var(--border)" }}
+          style={{
+            backgroundColor: "var(--bg-card)",
+            color: "var(--text)",
+            borderColor: "var(--border)",
+          }}
         />
       </div>
 
       {/* Fire level */}
       <div>
-        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
+        <label
+          className="text-sm mb-1 block"
+          style={{ color: "var(--text-muted)" }}
+        >
           {t.labelFireLevel}
         </label>
         <div className="flex gap-2">
@@ -239,11 +299,17 @@ export default function RoastForm() {
               key={f.value}
               onClick={() => setFireLevel(f.value)}
               className={`flex-1 py-2 text-xs rounded-xl border transition-colors ${
-                fireLevel === f.value ? "border-orange-300 text-orange-800 font-medium" : ""
+                fireLevel === f.value
+                  ? "border-orange-300 text-orange-800 font-medium"
+                  : ""
               }`}
-              style={fireLevel === f.value
-                ? { backgroundColor: "var(--bg-card)", borderColor: "#f97316" }
-                : { borderColor: "var(--border)", color: "var(--text-muted)" }
+              style={
+                fireLevel === f.value
+                  ? {
+                      backgroundColor: "var(--bg-card)",
+                      borderColor: "#f97316",
+                    }
+                  : { borderColor: "var(--border)", color: "var(--text-muted)" }
               }
             >
               {f.label}
