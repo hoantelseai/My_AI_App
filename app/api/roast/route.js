@@ -9,41 +9,48 @@ export async function POST(request) {
     return Response.json({ error: "Thiếu nội dung" }, { status: 400 });
   }
 
-  const categoryGuide = {
-    "Design / UI": `Tập trung vào: màu sắc, typography, spacing, hierarchy,
+  // Giới hạn content tối đa 3000 ký tự
+  const trimmedContent = content ? content.substring(0, 3000) : "";
+
+  const categoryGuide =
+    {
+      "Design / UI": `Tập trung vào: màu sắc, typography, spacing, hierarchy,
     UX flow. Dùng thuật ngữ design thật (contrast ratio,
     visual weight, whitespace). Ví von với các sản phẩm nổi tiếng.`,
-    Code: `Tập trung vào: naming convention, độ phức tạp, khả năng
+      Code: `Tập trung vào: naming convention, độ phức tạp, khả năng
     maintain, potential bugs. Được phép dùng thuật ngữ kỹ thuật
     (O(n²), side effects, coupling). Roast kiểu "senior dev review PR của junior".`,
-    "Bài viết": `Tập trung vào: structure, clarity, hook mở đầu, CTA.
+      "Bài viết": `Tập trung vào: structure, clarity, hook mở đầu, CTA.
     Nhận xét về giọng văn và audience phù hợp.`,
-    CV: `Tập trung vào: ATS-friendliness, action verbs, kết quả
+      CV: `Tập trung vào: ATS-friendliness, action verbs, kết quả
     đo lường được, formatting. Đóng vai recruiter đã đọc 200 CV hôm nay.`,
-    "Pitch deck": `Tập trung vào: problem/solution clarity, market size,
+      "Pitch deck": `Tập trung vào: problem/solution clarity, market size,
     traction, storytelling. Đóng vai VC đã nghe 50 pitch tuần này.`,
-  }[category] ?? `Nhận xét tổng quát về chất lượng và tính chuyên nghiệp.`;
+    }[category] ?? `Nhận xét tổng quát về chất lượng và tính chuyên nghiệp.`;
 
-  const fireLevelInstruction = {
-    gentle: `Giọng điệu: người mentor thân thiện. Mỗi chê phải kèm lời động viên.`,
-    medium: `Giọng điệu: đồng nghiệp thẳng thắn có khiếu hài hước.`,
-    savage: `Giọng điệu: Gordon Ramsay của ngành sáng tạo. Không nương tay.`,
-  }[fireLevel] ?? `Giọng điệu: hài hước vừa phải, thẳng thắn.`;
+  const fireLevelInstruction =
+    {
+      gentle: `Giọng điệu: người mentor thân thiện. Mỗi chê phải kèm lời động viên.`,
+      medium: `Giọng điệu: đồng nghiệp thẳng thắn có khiếu hài hước.`,
+      savage: `Giọng điệu: Gordon Ramsay của ngành sáng tạo. Không nương tay.`,
+    }[fireLevel] ?? `Giọng điệu: hài hước vừa phải, thẳng thắn.`;
 
   // Tìm roast tương tự hay nhất
   const similarRoasts = await findSimilarRoasts(
-    content || "design feedback",
+    trimmedContent || "design feedback",
     category,
-    supabase
+    supabase,
   );
 
-  const examplesSection = similarRoasts.length > 0
-    ? `\nVÍ DỤ ROAST HAY NHẤT (học theo phong cách này):\n${
-        similarRoasts.map((r, i) =>
-          `Ví dụ ${i + 1}:\nNội dung: ${r.content?.substring(0, 100)}\nRoast: ${r.roast_text}`
-        ).join("\n\n")
-      }\n`
-    : "";
+  const examplesSection =
+    similarRoasts.length > 0
+      ? `\nVÍ DỤ ROAST HAY NHẤT (học theo phong cách này):\n${similarRoasts
+          .map(
+            (r, i) =>
+              `Ví dụ ${i + 1}:\nNội dung: ${r.content?.substring(0, 100)}\nRoast: ${r.roast_text}`,
+          )
+          .join("\n\n")}\n`
+      : "";
 
   const systemPrompt = `Bạn là chuyên gia roast sản phẩm sáng tạo với 10 năm kinh nghiệm.
 ${examplesSection}
@@ -75,13 +82,13 @@ OUTPUT: JSON hợp lệ, KHÔNG markdown, KHÔNG backtick:
             },
             {
               type: "text",
-              text: `Loại: ${category}\n\nMô tả thêm: ${content || "Không có"}`,
+              text: `Loại: ${category}\n\nMô tả thêm: ${trimmedContent || "Không có"}`,
             },
           ],
         }
       : {
           role: "user",
-          content: `Loại: ${category}\n\nNội dung:\n${content}`,
+          content: `Loại: ${category}\n\nNội dung:\n${trimmedContent}`,
         };
 
     const response = await fetch(
@@ -99,38 +106,68 @@ OUTPUT: JSON hợp lệ, KHÔNG markdown, KHÔNG backtick:
           messages: [{ role: "system", content: systemPrompt }, userMessage],
           max_tokens: 2000,
         }),
-      }
+      },
     );
 
     const data = await response.json();
     console.log("Groq response:", JSON.stringify(data).substring(0, 300));
 
     const text = data.choices[0].message.content;
+    console.log("Raw text:", text.substring(0, 500));
     const cleaned = text.replace(/```json|```/g, "").trim();
-    const result = JSON.parse(cleaned);
+
+    // Tìm JSON hợp lệ trong response
+    let result;
+    try {
+      result = JSON.parse(cleaned);
+    } catch {
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        result = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("Không parse được JSON từ AI response");
+      }
+    }
 
     async function translateRoast(langCode, originalResult) {
-      const translatePrompt = `Dịch JSON sau sang ${langCode === "en" ? "English" : "Japanese"}.
+      try {
+        const translatePrompt = `Dịch JSON sau sang ${langCode === "en" ? "English" : "Japanese"}.
 Giữ nguyên format JSON, chỉ dịch giá trị text, KHÔNG dịch key.
 KHÔNG markdown, KHÔNG backtick.
+Chỉ trả về JSON, không có text nào khác.
 
 ${JSON.stringify(originalResult)}`;
 
-      const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${GROQ_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [{ role: "user", content: translatePrompt }],
-          max_tokens: 2000,
-        }),
-      });
-      const d = await r.json();
-      const txt = d.choices[0].message.content;
-      return JSON.parse(txt.replace(/```json|```/g, "").trim());
+        const r = await fetch(
+          "https://api.groq.com/openai/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${GROQ_API_KEY}`,
+            },
+            body: JSON.stringify({
+              model: "llama-3.3-70b-versatile",
+              messages: [{ role: "user", content: translatePrompt }],
+              max_tokens: 2000,
+            }),
+          },
+        );
+        const d = await r.json();
+        const txt = d.choices[0].message.content;
+        const cleanedTxt = txt.replace(/```json|```/g, "").trim();
+        let parsed;
+        try {
+          parsed = JSON.parse(cleanedTxt);
+        } catch {
+          const match = cleanedTxt.match(/\{[\s\S]*\}/);
+          parsed = match ? JSON.parse(match[0]) : originalResult;
+        }
+        return parsed;
+      } catch (e) {
+        console.error(`Lỗi dịch ${langCode}:`, e.message);
+        return originalResult;
+      }
     }
 
     const [resultEn, resultJa] = await Promise.all([
@@ -143,7 +180,7 @@ ${JSON.stringify(originalResult)}`;
       .from("roasts")
       .insert({
         category,
-        content: content || "[ảnh]",
+        content: trimmedContent || "[ảnh]",
         fire_level: fireLevel,
         roast_text: result.roastText,
         tips: result.tips,
@@ -159,12 +196,9 @@ ${JSON.stringify(originalResult)}`;
 
     // Tạo embedding chạy background — không block response
     if (saved) {
-      createEmbedding(`${content || ""} ${result.roastText}`)
+      createEmbedding(`${trimmedContent || ""} ${result.roastText}`)
         .then((embedding) =>
-          supabase
-            .from("roasts")
-            .update({ embedding })
-            .eq("id", saved.id)
+          supabase.from("roasts").update({ embedding }).eq("id", saved.id),
         )
         .catch((e) => console.error("Lỗi embedding:", e.message));
     }
