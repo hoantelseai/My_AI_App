@@ -194,13 +194,16 @@ export default function RoastForm() {
               onClick={() => setFireLevel(f.value)}
               className={`flex-1 py-2 text-xs rounded-xl border transition-colors ${
                 fireLevel === f.value
-                  ? "bg-orange-50 border-orange-300 text-orange-800 font-medium"
+                  ? "border-orange-300 text-orange-800 font-medium"
                   : ""
               }`}
               style={
-                fireLevel !== f.value
-                  ? { borderColor: "var(--border)", color: "var(--text-muted)" }
-                  : {}
+                fireLevel === f.value
+                  ? {
+                      backgroundColor: "var(--bg-card)",
+                      borderColor: "#f97316",
+                    }
+                  : { borderColor: "var(--border)", color: "var(--text-muted)" }
               }
             >
               {f.label}
