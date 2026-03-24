@@ -1,8 +1,36 @@
 @import "tailwindcss";
 
-:root {
+/* Light (default) */
+html, html.light {
+  --bg: #f9fafb;
+  --bg-card: #ffffff;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
   --background: #ffffff;
   --foreground: #171717;
+}
+
+/* Grey mode */
+html.grey {
+  --bg: #e5e7eb;
+  --bg-card: #d1d5db;
+  --text: #111827;
+  --text-muted: #4b5563;
+  --border: #9ca3af;
+  --background: #e5e7eb;
+  --foreground: #111827;
+}
+
+/* Dark mode */
+html.dark {
+  --bg: #111827;
+  --bg-card: #1f2937;
+  --text: #f9fafb;
+  --text-muted: #9ca3af;
+  --border: #374151;
+  --background: #111827;
+  --foreground: #f9fafb;
 }
 
 @theme inline {
@@ -12,44 +40,8 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--bg) !important;
+  color: var(--text) !important;
   font-family: Arial, Helvetica, sans-serif;
 }
-
-/* Light (default) */
-:root {
-  --bg: #f9fafb;
-  --bg-card: #ffffff;
-  --text: #111827;
-  --text-muted: #6b7280;
-  --border: #e5e7eb;
-}
-
-/* Grey mode */
-.grey {
-  --bg: #e5e7eb;
-  --bg-card: #d1d5db;
-  --text: #111827;
-  --text-muted: #4b5563;
-  --border: #9ca3af;
-}
-
-/* Dark mode */
-.dark {
-  --bg: #111827;
-  --bg-card: #1f2937;
-  --text: #f9fafb;
-  --text-muted: #9ca3af;
-  --border: #374151;
-}
-
-body { background-color: var(--bg); color: var(--text); }
