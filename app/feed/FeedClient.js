@@ -2,9 +2,11 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useLanguage } from "../lib/LanguageContext";
+import { useTheme } from "../lib/ThemeContext";
 
 export default function FeedClient({ roasts: initial }) {
   const { t, lang, setLang } = useLanguage();
+  const { theme, changeTheme } = useTheme();
   const [roasts, setRoasts] = useState(initial);
 
   async function handleVote(id, currentVotes) {
@@ -34,19 +36,41 @@ export default function FeedClient({ roasts: initial }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-medium" style={{ color: "var(--text)" }}>{t.feedTitle}</h2>
-        <div className="flex gap-1">
-          {["vi", "en", "ja"].map((l) => (
-            <button
-              key={l}
-              onClick={() => setLang(l)}
-              className={`text-xs px-2 py-1 rounded-lg transition-colors ${
-                lang === l ? "bg-orange-100 text-orange-700 font-medium" : ""
-              }`}
-              style={lang !== l ? { color: "var(--text-muted)" } : {}}
-            >
-              {l === "vi" ? "VN" : l === "en" ? "EN" : "JP"}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          {/* Nút chọn theme */}
+          <div className="flex gap-1">
+            {[
+              { key: "light", icon: "☀️" },
+              { key: "grey", icon: "🌥️" },
+              { key: "dark", icon: "🌙" },
+            ].map((th) => (
+              <button
+                key={th.key}
+                onClick={() => changeTheme(th.key)}
+                className={`text-xs px-2 py-1 rounded-lg transition-colors ${
+                  theme === th.key ? "bg-orange-100 text-orange-700 font-medium" : ""
+                }`}
+                style={theme !== th.key ? { color: "var(--text-muted)" } : {}}
+              >
+                {th.icon}
+              </button>
+            ))}
+          </div>
+          {/* Nút chọn ngôn ngữ */}
+          <div className="flex gap-1">
+            {["vi", "en", "ja"].map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={`text-xs px-2 py-1 rounded-lg transition-colors ${
+                  lang === l ? "bg-orange-100 text-orange-700 font-medium" : ""
+                }`}
+                style={lang !== l ? { color: "var(--text-muted)" } : {}}
+              >
+                {l === "vi" ? "VN" : l === "en" ? "EN" : "JP"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
