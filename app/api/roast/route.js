@@ -1,5 +1,6 @@
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 import { supabase } from "../../lib/supabase";
+import { findSimilarRoasts, createEmbedding } from "../../lib/embeddings";
 
 export async function POST(request) {
   const { content, category, fireLevel, image } = await request.json();
@@ -8,31 +9,44 @@ export async function POST(request) {
     return Response.json({ error: "Thiếu nội dung" }, { status: 400 });
   }
 
-  const categoryGuide =
-    {
-      "Design / UI": `Tập trung vào: màu sắc, typography, spacing, hierarchy,
+  const categoryGuide = {
+    "Design / UI": `Tập trung vào: màu sắc, typography, spacing, hierarchy,
     UX flow. Dùng thuật ngữ design thật (contrast ratio,
     visual weight, whitespace). Ví von với các sản phẩm nổi tiếng.`,
-      Code: `Tập trung vào: naming convention, độ phức tạp, khả năng
+    Code: `Tập trung vào: naming convention, độ phức tạp, khả năng
     maintain, potential bugs. Được phép dùng thuật ngữ kỹ thuật
     (O(n²), side effects, coupling). Roast kiểu "senior dev review PR của junior".`,
-      "Bài viết": `Tập trung vào: structure, clarity, hook mở đầu, CTA.
+    "Bài viết": `Tập trung vào: structure, clarity, hook mở đầu, CTA.
     Nhận xét về giọng văn và audience phù hợp.`,
-      CV: `Tập trung vào: ATS-friendliness, action verbs, kết quả
+    CV: `Tập trung vào: ATS-friendliness, action verbs, kết quả
     đo lường được, formatting. Đóng vai recruiter đã đọc 200 CV hôm nay.`,
-      "Pitch deck": `Tập trung vào: problem/solution clarity, market size,
+    "Pitch deck": `Tập trung vào: problem/solution clarity, market size,
     traction, storytelling. Đóng vai VC đã nghe 50 pitch tuần này.`,
-    }[category] ?? `Nhận xét tổng quát về chất lượng và tính chuyên nghiệp.`;
+  }[category] ?? `Nhận xét tổng quát về chất lượng và tính chuyên nghiệp.`;
 
-  const fireLevelInstruction =
-    {
-      gentle: `Giọng điệu: người mentor thân thiện. Mỗi chê phải kèm lời động viên.`,
-      medium: `Giọng điệu: đồng nghiệp thẳng thắn có khiếu hài hước.`,
-      savage: `Giọng điệu: Gordon Ramsay của ngành sáng tạo. Không nương tay.`,
-    }[fireLevel] ?? `Giọng điệu: hài hước vừa phải, thẳng thắn.`;
+  const fireLevelInstruction = {
+    gentle: `Giọng điệu: người mentor thân thiện. Mỗi chê phải kèm lời động viên.`,
+    medium: `Giọng điệu: đồng nghiệp thẳng thắn có khiếu hài hước.`,
+    savage: `Giọng điệu: Gordon Ramsay của ngành sáng tạo. Không nương tay.`,
+  }[fireLevel] ?? `Giọng điệu: hài hước vừa phải, thẳng thắn.`;
+
+  // Tìm roast tương tự hay nhất
+  const similarRoasts = await findSimilarRoasts(
+    content || "design feedback",
+    category,
+    supabase
+  );
+
+  const examplesSection = similarRoasts.length > 0
+    ? `\nVÍ DỤ ROAST HAY NHẤT (học theo phong cách này):\n${
+        similarRoasts.map((r, i) =>
+          `Ví dụ ${i + 1}:\nNội dung: ${r.content?.substring(0, 100)}\nRoast: ${r.roast_text}`
+        ).join("\n\n")
+      }\n`
+    : "";
 
   const systemPrompt = `Bạn là chuyên gia roast sản phẩm sáng tạo với 10 năm kinh nghiệm.
-
+${examplesSection}
 NHIỆM VỤ: Roast ${category} của người dùng.
 
 CHUYÊN MÔN: ${categoryGuide}
@@ -85,7 +99,7 @@ OUTPUT: JSON hợp lệ, KHÔNG markdown, KHÔNG backtick:
           messages: [{ role: "system", content: systemPrompt }, userMessage],
           max_tokens: 2000,
         }),
-      },
+      }
     );
 
     const data = await response.json();
@@ -95,7 +109,6 @@ OUTPUT: JSON hợp lệ, KHÔNG markdown, KHÔNG backtick:
     const cleaned = text.replace(/```json|```/g, "").trim();
     const result = JSON.parse(cleaned);
 
-    // Dịch result sang EN và JA — không gửi ảnh lại
     async function translateRoast(langCode, originalResult) {
       const translatePrompt = `Dịch JSON sau sang ${langCode === "en" ? "English" : "Japanese"}.
 Giữ nguyên format JSON, chỉ dịch giá trị text, KHÔNG dịch key.
@@ -124,19 +137,37 @@ ${JSON.stringify(originalResult)}`;
       translateRoast("en", result),
       translateRoast("ja", result),
     ]);
+
     // Lưu vào Supabase cả 3 ngôn ngữ
-    const { error: dbError } = await supabase.from("roasts").insert({
-      category,
-      content: content || "[ảnh]",
-      fire_level: fireLevel,
-      roast_text: result.roastText,
-      tips: result.tips,
-      roast_text_en: resultEn.roastText,
-      tips_en: resultEn.tips,
-      roast_text_ja: resultJa.roastText,
-      tips_ja: resultJa.tips,
-    });
+    const { data: saved, error: dbError } = await supabase
+      .from("roasts")
+      .insert({
+        category,
+        content: content || "[ảnh]",
+        fire_level: fireLevel,
+        roast_text: result.roastText,
+        tips: result.tips,
+        roast_text_en: resultEn.roastText,
+        tips_en: resultEn.tips,
+        roast_text_ja: resultJa.roastText,
+        tips_ja: resultJa.tips,
+      })
+      .select()
+      .single();
+
     if (dbError) console.error("Lỗi lưu DB:", dbError.message);
+
+    // Tạo embedding chạy background — không block response
+    if (saved) {
+      createEmbedding(`${content || ""} ${result.roastText}`)
+        .then((embedding) =>
+          supabase
+            .from("roasts")
+            .update({ embedding })
+            .eq("id", saved.id)
+        )
+        .catch((e) => console.error("Lỗi embedding:", e.message));
+    }
 
     return Response.json({
       roastText: result.roastText,
