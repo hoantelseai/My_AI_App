@@ -33,17 +33,16 @@ export default function FeedClient({ roasts: initial }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-medium text-gray-900">{t.feedTitle}</h2>
+        <h2 className="font-medium" style={{ color: "var(--text)" }}>{t.feedTitle}</h2>
         <div className="flex gap-1">
           {["vi", "en", "ja"].map((l) => (
             <button
               key={l}
               onClick={() => setLang(l)}
               className={`text-xs px-2 py-1 rounded-lg transition-colors ${
-                lang === l
-                  ? "bg-orange-100 text-orange-700 font-medium"
-                  : "text-gray-400 hover:text-gray-600"
+                lang === l ? "bg-orange-100 text-orange-700 font-medium" : ""
               }`}
+              style={lang !== l ? { color: "var(--text-muted)" } : {}}
             >
               {l === "vi" ? "VN" : l === "en" ? "EN" : "JP"}
             </button>
@@ -52,8 +51,11 @@ export default function FeedClient({ roasts: initial }) {
       </div>
 
       {roasts.length === 0 && (
-        <p className="text-gray-400 text-sm text-center py-10">{t.emptyFeed}</p>
+        <p className="text-sm text-center py-10" style={{ color: "var(--text-muted)" }}>
+          {t.emptyFeed}
+        </p>
       )}
+
       {roasts.map((r) => {
         const roastText = lang === "en" ? (r.roast_text_en || r.roast_text)
                         : lang === "ja" ? (r.roast_text_ja || r.roast_text)
@@ -63,29 +65,34 @@ export default function FeedClient({ roasts: initial }) {
                    : r.tips;
         return (
           <div key={r.id}
-            className="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
+            className="border rounded-2xl p-4 space-y-3"
+            style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs bg-orange-50 text-orange-600
                                border border-orange-100 rounded-full px-2 py-0.5">
                 {r.category}
               </span>
-              <span className="text-xs text-gray-400">{LEVEL_LABEL[r.fire_level]}</span>
-              <span className="text-xs text-gray-300 ml-auto">
+              <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                {LEVEL_LABEL[r.fire_level]}
+              </span>
+              <span className="text-xs ml-auto" style={{ color: "var(--text-muted)" }}>
                 {new Date(r.created_at).toLocaleDateString("vi-VN")}
               </span>
             </div>
-            <p className="text-sm text-gray-700 leading-relaxed">{roastText}</p>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--text)" }}>
+              {roastText}
+            </p>
             <ul className="space-y-1">
               {tips.map((tip, i) => (
-                <li key={i} className="text-xs text-gray-500 flex gap-2">
+                <li key={i} className="text-xs flex gap-2" style={{ color: "var(--text-muted)" }}>
                   <span className="text-teal-400">•</span>{tip}
                 </li>
               ))}
             </ul>
             <button
               onClick={() => handleVote(r.id, r.votes)}
-              className="flex items-center gap-1.5 text-xs text-gray-400
-                         hover:text-orange-500 transition-colors"
+              className="flex items-center gap-1.5 text-xs hover:text-orange-500 transition-colors"
+              style={{ color: "var(--text-muted)" }}
             >
               🔥 <span>{r.votes} {voteLabel}</span>
             </button>

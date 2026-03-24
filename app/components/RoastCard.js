@@ -13,17 +13,17 @@ export default function RoastCard({ roast }) {
              : roast.tips;
 
   return (
-    <div className="border border-orange-100 bg-orange-50 rounded-2xl p-4
-                    space-y-3 mt-2">
+    <div className="rounded-2xl p-4 space-y-3 mt-2 border"
+      style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}>
       <div>
         <p className="text-xs font-medium text-orange-400 mb-1">{t.roastLabel}</p>
-        <p className="text-sm text-gray-800 leading-relaxed">{roastText}</p>
+        <p className="text-sm leading-relaxed" style={{ color: "var(--text)" }}>{roastText}</p>
       </div>
-      <div className="border-t border-orange-100 pt-3">
-        <p className="text-xs font-medium text-teal-600 mb-2">{t.tipsLabel}</p>
+      <div className="border-t pt-3" style={{ borderColor: "var(--border)" }}>
+        <p className="text-xs font-medium text-teal-500 mb-2">{t.tipsLabel}</p>
         <ul className="space-y-1">
           {tips.map((tip, i) => (
-            <li key={i} className="text-sm text-gray-700 flex gap-2">
+            <li key={i} className="text-sm flex gap-2" style={{ color: "var(--text-muted)" }}>
               <span className="text-teal-400 font-medium mt-0.5">•</span>
               {tip}
             </li>
