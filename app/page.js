@@ -2,25 +2,43 @@
 import Link from "next/link";
 import RoastForm from "./components/RoastForm";
 import { useLanguage } from "./lib/LanguageContext";
+import { useTheme } from "./lib/ThemeContext";
 
 export default function Home() {
   const { t, lang, setLang } = useLanguage();
+  const { theme, changeTheme } = useTheme();
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen" style={{ backgroundColor: "var(--bg)" }}>
       {/* Header */}
-      <header className="bg-white border-b border-gray-100 px-4 py-3">
+      <header className="border-b px-4 py-3" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}>
         <div className="max-w-xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div
-              className="w-7 h-7 rounded-lg bg-orange-100 flex items-center
-                            justify-center text-sm"
-            >
-              🔥
-            </div>
-            <span className="font-medium text-gray-900">{t.appName}</span>
+            <div className="w-7 h-7 rounded-lg bg-orange-100 flex items-center
+                            justify-center text-sm">🔥</div>
+            <span className="font-medium" style={{ color: "var(--text)" }}>{t.appName}</span>
           </div>
           <div className="flex items-center gap-3">
+            {/* Nút chọn theme */}
+            <div className="flex gap-1">
+              {[
+                { key: "light", icon: "☀️" },
+                { key: "grey", icon: "🌥️" },
+                { key: "dark", icon: "🌙" },
+              ].map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => changeTheme(t.key)}
+                  className={`text-xs px-2 py-1 rounded-lg transition-colors ${
+                    theme === t.key
+                      ? "bg-orange-100 text-orange-700 font-medium"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  {t.icon}
+                </button>
+              ))}
+            </div>
             {/* Nút chọn ngôn ngữ */}
             <div className="flex gap-1">
               {["vi", "en", "ja"].map((l) => (
@@ -37,10 +55,7 @@ export default function Home() {
                 </button>
               ))}
             </div>
-            <Link
-              href="/feed"
-              className="text-sm text-orange-500 hover:underline"
-            >
+            <Link href="/feed" className="text-sm text-orange-500 hover:underline">
               {t.viewFeed}
             </Link>
           </div>
@@ -49,8 +64,8 @@ export default function Home() {
 
       {/* Hero */}
       <section className="max-w-xl mx-auto px-4 pt-10 pb-6 text-center">
-        <h1 className="text-2xl font-medium text-gray-900 mb-2">{t.hero}</h1>
-        <p className="text-gray-500 text-sm">{t.heroSub}</p>
+        <h1 className="text-2xl font-medium mb-2" style={{ color: "var(--text)" }}>{t.hero}</h1>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t.heroSub}</p>
       </section>
 
       {/* Form */}
