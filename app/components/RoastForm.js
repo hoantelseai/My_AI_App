@@ -2,6 +2,7 @@
 import { useState } from "react";
 import RoastCard from "./RoastCard";
 import { useLanguage } from "../lib/LanguageContext";
+import { readDocx, readXlsx, readPdf } from "../lib/fileReaders";
 
 export default function RoastForm() {
   const { t, lang } = useLanguage();
@@ -17,10 +18,17 @@ export default function RoastForm() {
   const [isDragging, setIsDragging] = useState(false);
 
   const CATEGORIES = {
-    vi: ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck" , "CSV Data"],
+    vi: ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck", "CSV Data"],
     en: ["Design / UI", "Code", "Article", "CV", "Pitch deck", "CSV Data"],
     ja: ["Design / UI", "Code", "記事", "履歴書", "ピッチデック", "CSV Data"],
-  }[lang] ?? ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck", "CSV Data"];
+  }[lang] ?? [
+    "Design / UI",
+    "Code",
+    "Bài viết",
+    "CV",
+    "Pitch deck",
+    "CSV Data",
+  ];
   const FIRE_LEVELS = [
     { label: t.gentle, value: "gentle" },
     { label: t.medium, value: "medium" },
@@ -83,25 +91,38 @@ export default function RoastForm() {
     }
   }
 
-  function handleCSV(file) {
-    if (!file || !file.name.endsWith(".csv")) return;
+  async function handleFile(file) {
+    if (!file) return;
     setCsvName(file.name);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target.result;
-      // Lấy tối đa 50 dòng đầu để tránh quá dài
-      const lines = text.split("\n").slice(0, 50).join("\n");
-      setCsvData(lines);
-      setContent(lines); // tự điền vào textarea
-    };
-    reader.readAsText(file);
+
+    try {
+      let text = "";
+      if (file.name.endsWith(".csv")) {
+        const raw = await file.text();
+        text = raw.split("\n").slice(0, 50).join("\n");
+      } else if (file.name.endsWith(".docx")) {
+        text = await readDocx(file);
+      } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
+        text = await readXlsx(file);
+      } else if (file.name.endsWith(".pdf")) {
+        text = await readPdf(file);
+      } else {
+        alert("Định dạng file chưa được hỗ trợ!");
+        return;
+      }
+      setCsvData(text);
+      setContent(text);
+    } catch (err) {
+      alert("Không đọc được file, thử lại nhé!");
+      console.error(err);
+    }
   }
 
   function handleDrop(e) {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    handleCSV(file);
+    handleFile(e.dataTransfer.files[0]);
   }
 
   return (
@@ -184,14 +205,14 @@ export default function RoastForm() {
             <div>
               <p className="text-2xl mb-1">📊</p>
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Kéo thả hoặc click để chọn file CSV
+                Kéo thả hoặc click — CSV, Excel, Word, PDF
               </p>
             </div>
           )}
           <input
             id="csv-input"
             type="file"
-            accept=".csv"
+            accept=".csv,.xlsx,.xls,.docx,.pdf"
             className="hidden"
             onChange={(e) => handleCSV(e.target.files[0])}
           />
