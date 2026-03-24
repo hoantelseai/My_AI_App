@@ -84,15 +84,22 @@ export default function RoastForm() {
     <div className="space-y-4">
       {/* Category */}
       <div>
-        <label className="text-sm text-gray-500 mb-1 block">
+        <label
+          className="text-sm mb-1 block"
+          style={{ color: "var(--text-muted)" }}
+        >
           {t.labelCategory}
         </label>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="w-full border border-gray-200 rounded-xl px-3 py-2
-                     text-sm bg-white text-gray-900 focus:outline-none focus:ring-2
-                     focus:ring-orange-200"
+          className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none
+           focus:ring-2 focus:ring-orange-200"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            color: "var(--text)",
+            borderColor: "var(--border)",
+          }}
         >
           {CATEGORIES.map((c) => (
             <option key={c}>{c}</option>
@@ -102,14 +109,20 @@ export default function RoastForm() {
 
       {/* Upload ảnh */}
       <div>
-        <label className="text-sm text-gray-500 mb-1 block">
+        <label
+          className="text-sm mb-1 block"
+          style={{ color: "var(--text-muted)" }}
+        >
           {t.labelImage}
         </label>
         <label
           className="flex flex-col items-center justify-center w-full
-                           h-28 border-2 border-dashed border-gray-200
-                           rounded-xl cursor-pointer hover:border-orange-300
-                           hover:bg-orange-50 transition-colors"
+             h-28 border-2 border-dashed rounded-xl cursor-pointer
+             hover:border-orange-300 transition-colors"
+          style={{
+            borderColor: "var(--border)",
+            backgroundColor: "var(--bg-card)",
+          }}
         >
           {imagePreview ? (
             <img
@@ -145,7 +158,10 @@ export default function RoastForm() {
 
       {/* Content */}
       <div>
-        <label className="text-sm text-gray-500 mb-1 block">
+        <label
+          className="text-sm mb-1 block"
+          style={{ color: "var(--text-muted)" }}
+        >
           {t.labelContent}
         </label>
         <textarea
@@ -153,15 +169,22 @@ export default function RoastForm() {
           onChange={(e) => setContent(e.target.value)}
           placeholder={t.placeholder}
           rows={5}
-          className="w-full border border-gray-200 rounded-xl px-3 py-2
-                     text-sm bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2
-                     focus:ring-orange-200 resize-none"
+          className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none
+           focus:ring-2 focus:ring-orange-200 resize-none"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            color: "var(--text)",
+            borderColor: "var(--border)",
+          }}
         />
       </div>
 
       {/* Fire level */}
       <div>
-        <label className="text-sm text-gray-500 mb-1 block">
+        <label
+          className="text-sm mb-1 block"
+          style={{ color: "var(--text-muted)" }}
+        >
           {t.labelFireLevel}
         </label>
         <div className="flex gap-2">
@@ -172,8 +195,13 @@ export default function RoastForm() {
               className={`flex-1 py-2 text-xs rounded-xl border transition-colors ${
                 fireLevel === f.value
                   ? "bg-orange-50 border-orange-300 text-orange-800 font-medium"
-                  : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                  : ""
               }`}
+              style={
+                fireLevel !== f.value
+                  ? { borderColor: "var(--border)", color: "var(--text-muted)" }
+                  : {}
+              }
             >
               {f.label}
             </button>
