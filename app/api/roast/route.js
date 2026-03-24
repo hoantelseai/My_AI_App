@@ -26,6 +26,9 @@ export async function POST(request) {
     đo lường được, formatting. Đóng vai recruiter đã đọc 200 CV hôm nay.`,
       "Pitch deck": `Tập trung vào: problem/solution clarity, market size,
     traction, storytelling. Đóng vai VC đã nghe 50 pitch tuần này.`,
+    "CSV Data": `Đây là dữ liệu CSV. Tập trung vào: cấu trúc data, 
+    tên cột có rõ ràng không, có missing data không, 
+    data types có hợp lý không, gợi ý cải thiện schema.`,
     }[category] ?? `Nhận xét tổng quát về chất lượng và tính chuyên nghiệp.`;
 
   const fireLevelInstruction =

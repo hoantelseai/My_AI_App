@@ -12,12 +12,15 @@ export default function RoastForm() {
   const [roast, setRoast] = useState(null);
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [csvData, setCsvData] = useState(null);
+  const [csvName, setCsvName] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
 
   const CATEGORIES = {
-    vi: ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck"],
-    en: ["Design / UI", "Code", "Article", "CV", "Pitch deck"],
-    ja: ["Design / UI", "Code", "記事", "履歴書", "ピッチデック"],
-  }[lang] ?? ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck"];
+    vi: ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck" , "CSV Data"],
+    en: ["Design / UI", "Code", "Article", "CV", "Pitch deck", "CSV Data"],
+    ja: ["Design / UI", "Code", "記事", "履歴書", "ピッチデック", "CSV Data"],
+  }[lang] ?? ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck", "CSV Data"];
   const FIRE_LEVELS = [
     { label: t.gentle, value: "gentle" },
     { label: t.medium, value: "medium" },
@@ -59,7 +62,7 @@ export default function RoastForm() {
   }
 
   async function handleSubmit() {
-    if (!content.trim() && !image) return;
+    if (!content.trim() && !image && !csvData) return;
     setLoading(true);
     setRoast(null);
 
@@ -78,6 +81,27 @@ export default function RoastForm() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleCSV(file) {
+    if (!file || !file.name.endsWith(".csv")) return;
+    setCsvName(file.name);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      // Lấy tối đa 50 dòng đầu để tránh quá dài
+      const lines = text.split("\n").slice(0, 50).join("\n");
+      setCsvData(lines);
+      setContent(lines); // tự điền vào textarea
+    };
+    reader.readAsText(file);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    handleCSV(file);
   }
 
   return (
@@ -105,6 +129,73 @@ export default function RoastForm() {
             <option key={c}>{c}</option>
           ))}
         </select>
+      </div>
+
+      {/* CSV Upload */}
+      <div>
+        <label
+          className="text-sm mb-1 block"
+          style={{ color: "var(--text-muted)" }}
+        >
+          Upload CSV (tuỳ chọn)
+        </label>
+        <div
+          onDrop={handleDrop}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          className="w-full border-2 border-dashed rounded-xl p-4 text-center
+               transition-colors cursor-pointer"
+          style={{
+            borderColor: isDragging ? "#f97316" : "var(--border)",
+            backgroundColor: isDragging ? "#fff7ed" : "var(--bg-card)",
+          }}
+          onClick={() => document.getElementById("csv-input").click()}
+        >
+          {csvName ? (
+            <div>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "var(--text)" }}
+              >
+                📄 {csvName}
+              </p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {csvData?.split("\n").length} dòng đã load
+              </p>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCsvData(null);
+                  setCsvName("");
+                  setContent("");
+                }}
+                className="text-xs text-red-400 hover:text-red-500 mt-1"
+              >
+                Xoá file
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p className="text-2xl mb-1">📊</p>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                Kéo thả hoặc click để chọn file CSV
+              </p>
+            </div>
+          )}
+          <input
+            id="csv-input"
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={(e) => handleCSV(e.target.files[0])}
+          />
+        </div>
       </div>
 
       {/* Upload ảnh */}
@@ -215,7 +306,7 @@ export default function RoastForm() {
       {/* Submit */}
       <button
         onClick={handleSubmit}
-        disabled={loading || (!content.trim() && !image)}
+        disabled={loading || (!content.trim() && !image && !csvData)}
         className="w-full py-3 rounded-xl bg-orange-500 text-white font-medium
                    text-sm hover:bg-orange-600 disabled:opacity-40
                    disabled:cursor-not-allowed transition-colors"
