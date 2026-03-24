@@ -30,7 +30,10 @@ export default function RootLayout({ children }) {
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.className=document.documentElement.className+' '+t;})();`,
+            __html: `(function(){
+      var t=localStorage.getItem('theme')||'light';
+      document.documentElement.classList.add(t);
+    })();`,
           }}
         />
       </head>

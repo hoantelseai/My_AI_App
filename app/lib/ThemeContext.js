@@ -12,7 +12,9 @@ export function ThemeProvider({ children }) {
   });
 
   useEffect(() => {
-    document.documentElement.className = theme;
+    const html = document.documentElement;
+    html.classList.remove("light", "grey", "dark");
+    html.classList.add(theme);
   }, [theme]);
 
   function changeTheme(t) {
