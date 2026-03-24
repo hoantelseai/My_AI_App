@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import RoastCard from "./RoastCard";
 import { useLanguage } from "../lib/LanguageContext";
 import { readDocx, readXlsx, readPdf } from "../lib/fileReaders";
@@ -16,19 +16,14 @@ export default function RoastForm() {
   const [csvData, setCsvData] = useState(null);
   const [csvName, setCsvName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
 
   const CATEGORIES = {
     vi: ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck", "CSV Data"],
     en: ["Design / UI", "Code", "Article", "CV", "Pitch deck", "CSV Data"],
     ja: ["Design / UI", "Code", "記事", "履歴書", "ピッチデック", "CSV Data"],
-  }[lang] ?? [
-    "Design / UI",
-    "Code",
-    "Bài viết",
-    "CV",
-    "Pitch deck",
-    "CSV Data",
-  ];
+  }[lang] ?? ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck", "CSV Data"];
+
   const FIRE_LEVELS = [
     { label: t.gentle, value: "gentle" },
     { label: t.medium, value: "medium" },
@@ -38,63 +33,30 @@ export default function RoastForm() {
   function handleImageChange(e) {
     const file = e.target.files[0];
     if (!file) return;
-
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const img = new Image();
-
     img.onload = () => {
-      // Giới hạn tối đa 800px
       const maxSize = 800;
       let w = img.width;
       let h = img.height;
       if (w > maxSize || h > maxSize) {
-        if (w > h) {
-          h = (h / w) * maxSize;
-          w = maxSize;
-        } else {
-          w = (w / h) * maxSize;
-          h = maxSize;
-        }
+        if (w > h) { h = (h / w) * maxSize; w = maxSize; }
+        else { w = (w / h) * maxSize; h = maxSize; }
       }
       canvas.width = w;
       canvas.height = h;
       ctx.drawImage(img, 0, 0, w, h);
-
-      const resized = canvas.toDataURL("image/jpeg", 0.7); // nén 70%
+      const resized = canvas.toDataURL("image/jpeg", 0.7);
       setImagePreview(resized);
       setImage(resized.split(",")[1]);
     };
-
     img.src = URL.createObjectURL(file);
-  }
-
-  async function handleSubmit() {
-    if (!content.trim() && !image && !csvData) return;
-    setLoading(true);
-    setRoast(null);
-
-    try {
-      const res = await fetch("/api/roast", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, category, fireLevel, image, lang }),
-      });
-      if (!res.ok) throw new Error("API lỗi");
-      const data = await res.json();
-      setRoast(data);
-    } catch (err) {
-      alert("Có lỗi xảy ra, thử lại nhé!");
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
   }
 
   async function handleFile(file) {
     if (!file) return;
     setCsvName(file.name);
-
     try {
       let text = "";
       if (file.name.endsWith(".csv")) {
@@ -121,72 +83,71 @@ export default function RoastForm() {
   function handleDrop(e) {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
     handleFile(e.dataTransfer.files[0]);
+  }
+
+  async function handleSubmit() {
+    if (!content.trim() && !image && !csvData) return;
+    setLoading(true);
+    setRoast(null);
+    try {
+      const res = await fetch("/api/roast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, category, fireLevel, image, lang }),
+      });
+      if (!res.ok) throw new Error("API lỗi");
+      const data = await res.json();
+      setRoast(data);
+    } catch (err) {
+      alert("Có lỗi xảy ra, thử lại nhé!");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="space-y-4">
       {/* Category */}
       <div>
-        <label
-          className="text-sm mb-1 block"
-          style={{ color: "var(--text-muted)" }}
-        >
+        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
           {t.labelCategory}
         </label>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none
-           focus:ring-2 focus:ring-orange-200"
-          style={{
-            backgroundColor: "var(--bg-card)",
-            color: "var(--text)",
-            borderColor: "var(--border)",
-          }}
+                     focus:ring-2 focus:ring-orange-200"
+          style={{ backgroundColor: "var(--bg-card)", color: "var(--text)", borderColor: "var(--border)" }}
         >
-          {CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
+          {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
         </select>
       </div>
 
-      {/* CSV Upload */}
+      {/* File Upload (CSV, Excel, Word, PDF) */}
       <div>
-        <label
-          className="text-sm mb-1 block"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Upload CSV (tuỳ chọn)
+        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
+          Upload file (tuỳ chọn)
         </label>
         <div
           onDrop={handleDrop}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
+          onClick={() => fileInputRef.current?.click()}
           className="w-full border-2 border-dashed rounded-xl p-4 text-center
-               transition-colors cursor-pointer"
+                     transition-colors cursor-pointer"
           style={{
             borderColor: isDragging ? "#f97316" : "var(--border)",
             backgroundColor: isDragging ? "#fff7ed" : "var(--bg-card)",
           }}
-          onClick={() => document.getElementById("csv-input").click()}
         >
           {csvName ? (
             <div>
-              <p
-                className="text-sm font-medium"
-                style={{ color: "var(--text)" }}
-              >
+              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
                 📄 {csvName}
               </p>
-              <p
-                className="text-xs mt-1"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                 {csvData?.split("\n").length} dòng đã load
               </p>
               <button
@@ -210,57 +171,40 @@ export default function RoastForm() {
             </div>
           )}
           <input
-            id="csv-input"
+            ref={fileInputRef}
             type="file"
             accept=".csv,.xlsx,.xls,.docx,.pdf"
             className="hidden"
-            onChange={(e) => handleCSV(e.target.files[0])}
+            onChange={(e) => handleFile(e.target.files[0])}
           />
         </div>
       </div>
 
       {/* Upload ảnh */}
       <div>
-        <label
-          className="text-sm mb-1 block"
-          style={{ color: "var(--text-muted)" }}
-        >
+        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
           {t.labelImage}
         </label>
         <label
           className="flex flex-col items-center justify-center w-full
-             h-28 border-2 border-dashed rounded-xl cursor-pointer
-             hover:border-orange-300 transition-colors"
-          style={{
-            borderColor: "var(--border)",
-            backgroundColor: "var(--bg-card)",
-          }}
+                     h-28 border-2 border-dashed rounded-xl cursor-pointer
+                     hover:border-orange-300 transition-colors"
+          style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-card)" }}
         >
           {imagePreview ? (
-            <img
-              src={imagePreview}
-              alt="preview"
-              className="h-full w-full object-contain rounded-xl p-1"
-            />
+            <img src={imagePreview} alt="preview"
+                 className="h-full w-full object-contain rounded-xl p-1" />
           ) : (
             <div className="text-center">
               <p className="text-2xl mb-1">🖼️</p>
               <p className="text-xs text-gray-400">{t.clickImage}</p>
             </div>
           )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="hidden"
-          />
+          <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
         </label>
         {imagePreview && (
           <button
-            onClick={() => {
-              setImage(null);
-              setImagePreview(null);
-            }}
+            onClick={() => { setImage(null); setImagePreview(null); }}
             className="text-xs text-gray-400 hover:text-red-400 mt-1"
           >
             {t.removeImage}
@@ -270,10 +214,7 @@ export default function RoastForm() {
 
       {/* Content */}
       <div>
-        <label
-          className="text-sm mb-1 block"
-          style={{ color: "var(--text-muted)" }}
-        >
+        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
           {t.labelContent}
         </label>
         <textarea
@@ -282,21 +223,14 @@ export default function RoastForm() {
           placeholder={t.placeholder}
           rows={5}
           className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none
-           focus:ring-2 focus:ring-orange-200 resize-none"
-          style={{
-            backgroundColor: "var(--bg-card)",
-            color: "var(--text)",
-            borderColor: "var(--border)",
-          }}
+                     focus:ring-2 focus:ring-orange-200 resize-none"
+          style={{ backgroundColor: "var(--bg-card)", color: "var(--text)", borderColor: "var(--border)" }}
         />
       </div>
 
       {/* Fire level */}
       <div>
-        <label
-          className="text-sm mb-1 block"
-          style={{ color: "var(--text-muted)" }}
-        >
+        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
           {t.labelFireLevel}
         </label>
         <div className="flex gap-2">
@@ -305,17 +239,11 @@ export default function RoastForm() {
               key={f.value}
               onClick={() => setFireLevel(f.value)}
               className={`flex-1 py-2 text-xs rounded-xl border transition-colors ${
-                fireLevel === f.value
-                  ? "border-orange-300 text-orange-800 font-medium"
-                  : ""
+                fireLevel === f.value ? "border-orange-300 text-orange-800 font-medium" : ""
               }`}
-              style={
-                fireLevel === f.value
-                  ? {
-                      backgroundColor: "var(--bg-card)",
-                      borderColor: "#f97316",
-                    }
-                  : { borderColor: "var(--border)", color: "var(--text-muted)" }
+              style={fireLevel === f.value
+                ? { backgroundColor: "var(--bg-card)", borderColor: "#f97316" }
+                : { borderColor: "var(--border)", color: "var(--text-muted)" }
               }
             >
               {f.label}
