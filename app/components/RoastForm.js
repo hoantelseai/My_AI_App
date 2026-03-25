@@ -2,7 +2,6 @@
 import { useState, useRef } from "react";
 import RoastCard from "./RoastCard";
 import { useLanguage } from "../lib/LanguageContext";
-// import { readDocx, readXlsx, readPdf } from "../lib/fileReaders";
 import { readDocx, readXlsx, pdfToImage } from "../lib/fileReaders";
 
 export default function RoastForm() {
@@ -23,14 +22,7 @@ export default function RoastForm() {
     vi: ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck", "CSV Data"],
     en: ["Design / UI", "Code", "Article", "CV", "Pitch deck", "CSV Data"],
     ja: ["Design / UI", "Code", "記事", "履歴書", "ピッチデック", "CSV Data"],
-  }[lang] ?? [
-    "Design / UI",
-    "Code",
-    "Bài viết",
-    "CV",
-    "Pitch deck",
-    "CSV Data",
-  ];
+  }[lang] ?? ["Design / UI", "Code", "Bài viết", "CV", "Pitch deck", "CSV Data"];
 
   const FIRE_LEVELS = [
     { label: t.gentle, value: "gentle" },
@@ -38,24 +30,16 @@ export default function RoastForm() {
     { label: t.savage, value: "savage" },
   ];
 
-  function handleImageChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+  function handleImageFromFile(file) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const img = new Image();
     img.onload = () => {
       const maxSize = 800;
-      let w = img.width;
-      let h = img.height;
+      let w = img.width, h = img.height;
       if (w > maxSize || h > maxSize) {
-        if (w > h) {
-          h = (h / w) * maxSize;
-          w = maxSize;
-        } else {
-          w = (w / h) * maxSize;
-          h = maxSize;
-        }
+        if (w > h) { h = (h / w) * maxSize; w = maxSize; }
+        else { w = (w / h) * maxSize; h = maxSize; }
       }
       canvas.width = w;
       canvas.height = h;
@@ -63,6 +47,9 @@ export default function RoastForm() {
       const resized = canvas.toDataURL("image/jpeg", 0.7);
       setImagePreview(resized);
       setImage(resized.split(",")[1]);
+      setCsvName("");
+      setCsvData(null);
+      setContent("");
     };
     img.src = URL.createObjectURL(file);
   }
@@ -74,18 +61,17 @@ export default function RoastForm() {
       let text = "";
       if (file.name.endsWith(".csv")) {
         const raw = await file.text();
-        text = raw.split("\n").slice(0, 50).join("\n");
+        text = raw.split("\n").slice(0, 100).join("\n");
       } else if (file.name.endsWith(".docx")) {
         text = await readDocx(file);
       } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
         text = await readXlsx(file);
       } else if (file.name.endsWith(".pdf")) {
-        // Render PDF thành ảnh rồi gửi AI vision
         const base64 = await pdfToImage(file);
         setImage(base64);
         setImagePreview(`data:image/jpeg;base64,${base64}`);
         setCsvData(null);
-        setContent(""); // Không cần text vì đã có ảnh
+        setContent("");
         return;
       } else {
         alert("Định dạng file chưa được hỗ trợ!");
@@ -97,12 +83,6 @@ export default function RoastForm() {
       console.error("Chi tiết lỗi file:", err);
       alert(`Không đọc được file: ${err.message}`);
     }
-  }
-
-  function handleDrop(e) {
-    e.preventDefault();
-    setIsDragging(false);
-    handleFile(e.dataTransfer.files[0]);
   }
 
   async function handleSubmit() {
@@ -126,43 +106,11 @@ export default function RoastForm() {
     }
   }
 
-  function handleImageFromFile(file) {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-    img.onload = () => {
-      const maxSize = 800;
-      let w = img.width,
-        h = img.height;
-      if (w > maxSize || h > maxSize) {
-        if (w > h) {
-          h = (h / w) * maxSize;
-          w = maxSize;
-        } else {
-          w = (w / h) * maxSize;
-          h = maxSize;
-        }
-      }
-      canvas.width = w;
-      canvas.height = h;
-      ctx.drawImage(img, 0, 0, w, h);
-      const resized = canvas.toDataURL("image/jpeg", 0.7);
-      setImagePreview(resized);
-      setImage(resized.split(",")[1]);
-      setCsvName("");
-      setCsvData(null);
-    };
-    img.src = URL.createObjectURL(file);
-  }
-
   return (
     <div className="space-y-4">
       {/* Category */}
       <div>
-        <label
-          className="text-sm mb-1 block"
-          style={{ color: "var(--text-muted)" }}
-        >
+        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
           {t.labelCategory}
         </label>
         <select
@@ -170,140 +118,15 @@ export default function RoastForm() {
           onChange={(e) => setCategory(e.target.value)}
           className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none
                      focus:ring-2 focus:ring-orange-200"
-          style={{
-            backgroundColor: "var(--bg-card)",
-            color: "var(--text)",
-            borderColor: "var(--border)",
-          }}
+          style={{ backgroundColor: "var(--bg-card)", color: "var(--text)", borderColor: "var(--border)" }}
         >
-          {CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
+          {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
         </select>
       </div>
 
-      {/* File Upload (CSV, Excel, Word, PDF) */}
-      {/* <div>
-        <label
-          className="text-sm mb-1 block"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Upload file (tuỳ chọn)
-        </label>
-        <div
-          onDrop={handleDrop}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full border-2 border-dashed rounded-xl p-4 text-center
-                     transition-colors cursor-pointer"
-          style={{
-            borderColor: isDragging ? "#f97316" : "var(--border)",
-            backgroundColor: isDragging ? "#fff7ed" : "var(--bg-card)",
-          }}
-        >
-          {csvName ? (
-            <div>
-              <p
-                className="text-sm font-medium"
-                style={{ color: "var(--text)" }}
-              >
-                📄 {csvName}
-              </p>
-              <p
-                className="text-xs mt-1"
-                style={{ color: "var(--text-muted)" }}
-              >
-                {csvData?.split("\n").length} dòng đã load
-              </p>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCsvData(null);
-                  setCsvName("");
-                  setContent("");
-                }}
-                className="text-xs text-red-400 hover:text-red-500 mt-1"
-              >
-                Xoá file
-              </button>
-            </div>
-          ) : (
-            <div>
-              <p className="text-2xl mb-1">📊</p>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Kéo thả hoặc click — CSV, Excel, Word, PDF
-              </p>
-            </div>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv,.xlsx,.xls,.docx,.pdf"
-            className="hidden"
-            onChange={(e) => handleFile(e.target.files[0])}
-          />
-        </div>
-      </div> */}
-
-      {/* Upload ảnh */}
-      {/* <div>
-        <label
-          className="text-sm mb-1 block"
-          style={{ color: "var(--text-muted)" }}
-        >
-          {t.labelImage}
-        </label>
-        <label
-          className="flex flex-col items-center justify-center w-full
-                     h-28 border-2 border-dashed rounded-xl cursor-pointer
-                     hover:border-orange-300 transition-colors"
-          style={{
-            borderColor: "var(--border)",
-            backgroundColor: "var(--bg-card)",
-          }}
-        >
-          {imagePreview ? (
-            <img
-              src={imagePreview}
-              alt="preview"
-              className="h-full w-full object-contain rounded-xl p-1"
-            />
-          ) : (
-            <div className="text-center">
-              <p className="text-2xl mb-1">🖼️</p>
-              <p className="text-xs text-gray-400">{t.clickImage}</p>
-            </div>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="hidden"
-          />
-        </label>
-        {imagePreview && (
-          <button
-            onClick={() => {
-              setImage(null);
-              setImagePreview(null);
-            }}
-            className="text-xs text-gray-400 hover:text-red-400 mt-1"
-          >
-            {t.removeImage}
-          </button>
-        )}
-      </div> */}
-
       {/* Upload gộp */}
       <div>
-        <label
-          className="text-sm mb-1 block"
-          style={{ color: "var(--text-muted)" }}
-        >
+        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
           {t.labelUpload}
         </label>
         <div
@@ -311,20 +134,14 @@ export default function RoastForm() {
             e.preventDefault();
             setIsDragging(false);
             const file = e.dataTransfer.files[0];
-            if (file?.type.startsWith("image/")) {
-              handleImageFromFile(file);
-            } else {
-              handleFile(file);
-            }
+            if (file?.type.startsWith("image/")) handleImageFromFile(file);
+            else handleFile(file);
           }}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
           onClick={() => fileInputRef.current?.click()}
           className="w-full border-2 border-dashed rounded-xl p-4 text-center
-               transition-colors cursor-pointer min-h-28"
+                     transition-colors cursor-pointer min-h-28"
           style={{
             borderColor: isDragging ? "#f97316" : "var(--border)",
             backgroundColor: isDragging ? "#fff7ed" : "var(--bg-card)",
@@ -332,16 +149,19 @@ export default function RoastForm() {
         >
           {imagePreview ? (
             <div>
-              <img
-                src={imagePreview}
-                alt="preview"
-                className="max-h-40 mx-auto object-contain rounded-xl mb-2"
-              />
+              <img src={imagePreview} alt="preview"
+                   className="max-h-40 mx-auto object-contain rounded-xl mb-2" />
+              {csvName?.endsWith(".pdf") && (
+                <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>
+                  📄 {t.pdfNotice}
+                </p>
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setImage(null);
                   setImagePreview(null);
+                  setCsvName("");
                 }}
                 className="text-xs text-red-400 hover:text-red-500"
               >
@@ -350,16 +170,10 @@ export default function RoastForm() {
             </div>
           ) : csvName ? (
             <div>
-              <p
-                className="text-sm font-medium"
-                style={{ color: "var(--text)" }}
-              >
+              <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
                 📄 {csvName}
               </p>
-              <p
-                className="text-xs mt-1"
-                style={{ color: "var(--text-muted)" }}
-              >
+              <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
                 {csvData?.split("\n").length} {t.uploadedLines}
               </p>
               <button
@@ -389,21 +203,16 @@ export default function RoastForm() {
             className="hidden"
             onChange={(e) => {
               const file = e.target.files[0];
-              if (file?.type.startsWith("image/")) {
-                handleImageFromFile(file);
-              } else {
-                handleFile(file);
-              }
+              if (file?.type.startsWith("image/")) handleImageFromFile(file);
+              else handleFile(file);
             }}
           />
         </div>
       </div>
+
       {/* Content */}
       <div>
-        <label
-          className="text-sm mb-1 block"
-          style={{ color: "var(--text-muted)" }}
-        >
+        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
           {t.labelContent}
         </label>
         <textarea
@@ -413,20 +222,13 @@ export default function RoastForm() {
           rows={5}
           className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none
                      focus:ring-2 focus:ring-orange-200 resize-none"
-          style={{
-            backgroundColor: "var(--bg-card)",
-            color: "var(--text)",
-            borderColor: "var(--border)",
-          }}
+          style={{ backgroundColor: "var(--bg-card)", color: "var(--text)", borderColor: "var(--border)" }}
         />
       </div>
 
       {/* Fire level */}
       <div>
-        <label
-          className="text-sm mb-1 block"
-          style={{ color: "var(--text-muted)" }}
-        >
+        <label className="text-sm mb-1 block" style={{ color: "var(--text-muted)" }}>
           {t.labelFireLevel}
         </label>
         <div className="flex gap-2">
@@ -435,17 +237,11 @@ export default function RoastForm() {
               key={f.value}
               onClick={() => setFireLevel(f.value)}
               className={`flex-1 py-2 text-xs rounded-xl border transition-colors ${
-                fireLevel === f.value
-                  ? "border-orange-300 text-orange-800 font-medium"
-                  : ""
+                fireLevel === f.value ? "border-orange-300 text-orange-800 font-medium" : ""
               }`}
-              style={
-                fireLevel === f.value
-                  ? {
-                      backgroundColor: "var(--bg-card)",
-                      borderColor: "#f97316",
-                    }
-                  : { borderColor: "var(--border)", color: "var(--text-muted)" }
+              style={fireLevel === f.value
+                ? { backgroundColor: "var(--bg-card)", borderColor: "#f97316" }
+                : { borderColor: "var(--border)", color: "var(--text-muted)" }
               }
             >
               {f.label}

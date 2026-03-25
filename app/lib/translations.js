@@ -26,6 +26,7 @@ export const translations = {
     uploadHint: "Kéo thả hoặc click — ảnh, CSV, Excel, Word, PDF",
     uploadedLines: "dòng đã load",
     removeFile: "Xoá file",
+    pdfNotice: "Trang 1 — AI roast dựa trên trang này"
   },
   en: {
     appName: "Roast My Work",
@@ -54,6 +55,7 @@ export const translations = {
     uploadHint: "Drag & drop or click — image, CSV, Excel, Word, PDF",
     uploadedLines: "rows loaded",
     removeFile: "Remove file",
+    pdfNotice: "Page 1 — AI will roast based on this page"
   },
   ja: {
     appName: "Roast My Work",
@@ -83,5 +85,6 @@ export const translations = {
       "ドラッグ＆ドロップまたはクリック — 画像・CSV・Excel・Word・PDF",
     uploadedLines: "行を読み込みました",
     removeFile: "ファイルを削除",
+    pdfNotice: "1ページ目 — AIはこのページを元に評価します"
   },
 };
