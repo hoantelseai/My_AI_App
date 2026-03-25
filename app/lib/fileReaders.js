@@ -20,18 +20,41 @@ export async function readXlsx(file) {
   return text.substring(0, 5000);
 }
 
-export async function readPdf(file) {
+// export async function readPdf(file) {
+//   const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
+//   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+//   const arrayBuffer = await file.arrayBuffer();
+//   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+//   let text = "";
+//   for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+//     const page = await pdf.getPage(i);
+//     const content = await page.getTextContent();
+//     text += content.items.map((item) => item.str).join(" ") + "\n";
+//   }
+//   return text.substring(0, 5000);
+// }
+
+export async function pdfToImage(file) {
   const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
-//   pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let text = "";
-  for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    text += content.items.map((item) => item.str).join(" ") + "\n";
-  }
-  return text.substring(0, 5000);
+  const page = await pdf.getPage(1); // Chỉ lấy trang 1
+
+  const scale = 1.5; // độ phân giải
+  const viewport = page.getViewport({ scale });
+
+  const canvas = document.createElement("canvas");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+
+  const ctx = canvas.getContext("2d");
+  await page.render({ canvasContext: ctx, viewport }).promise;
+
+  // Trả về base64 (bỏ phần "data:image/jpeg;base64,")
+  const base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+  return base64;
 }

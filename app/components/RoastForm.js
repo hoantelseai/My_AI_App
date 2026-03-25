@@ -2,7 +2,8 @@
 import { useState, useRef } from "react";
 import RoastCard from "./RoastCard";
 import { useLanguage } from "../lib/LanguageContext";
-import { readDocx, readXlsx, readPdf } from "../lib/fileReaders";
+// import { readDocx, readXlsx, readPdf } from "../lib/fileReaders";
+import { readDocx, readXlsx, pdfToImage } from "../lib/fileReaders";
 
 export default function RoastForm() {
   const { t, lang } = useLanguage();
@@ -79,7 +80,13 @@ export default function RoastForm() {
       } else if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
         text = await readXlsx(file);
       } else if (file.name.endsWith(".pdf")) {
-        text = await readPdf(file);
+        // Render PDF thành ảnh rồi gửi AI vision
+        const base64 = await pdfToImage(file);
+        setImage(base64);
+        setImagePreview(`data:image/jpeg;base64,${base64}`);
+        setCsvData(null);
+        setContent(""); // Không cần text vì đã có ảnh
+        return;
       } else {
         alert("Định dạng file chưa được hỗ trợ!");
         return;
@@ -120,27 +127,33 @@ export default function RoastForm() {
   }
 
   function handleImageFromFile(file) {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  const img = new Image();
-  img.onload = () => {
-    const maxSize = 800;
-    let w = img.width, h = img.height;
-    if (w > maxSize || h > maxSize) {
-      if (w > h) { h = (h / w) * maxSize; w = maxSize; }
-      else { w = (w / h) * maxSize; h = maxSize; }
-    }
-    canvas.width = w;
-    canvas.height = h;
-    ctx.drawImage(img, 0, 0, w, h);
-    const resized = canvas.toDataURL("image/jpeg", 0.7);
-    setImagePreview(resized);
-    setImage(resized.split(",")[1]);
-    setCsvName("");
-    setCsvData(null);
-  };
-  img.src = URL.createObjectURL(file);
-}
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      const maxSize = 800;
+      let w = img.width,
+        h = img.height;
+      if (w > maxSize || h > maxSize) {
+        if (w > h) {
+          h = (h / w) * maxSize;
+          w = maxSize;
+        } else {
+          w = (w / h) * maxSize;
+          h = maxSize;
+        }
+      }
+      canvas.width = w;
+      canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      const resized = canvas.toDataURL("image/jpeg", 0.7);
+      setImagePreview(resized);
+      setImage(resized.split(",")[1]);
+      setCsvName("");
+      setCsvData(null);
+    };
+    img.src = URL.createObjectURL(file);
+  }
 
   return (
     <div className="space-y-4">
