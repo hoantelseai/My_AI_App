@@ -22,8 +22,11 @@ export function ThemeProvider({ children }) {
     localStorage.setItem("theme", t);
   }
 
+  // mounted dùng typeof window thay vì useState
+  const mounted = typeof window !== "undefined";
+
   return (
-    <ThemeContext.Provider value={{ theme, changeTheme }}>
+    <ThemeContext.Provider value={{ theme, changeTheme, mounted }}>
       {children}
     </ThemeContext.Provider>
   );
