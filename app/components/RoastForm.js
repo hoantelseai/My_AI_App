@@ -119,6 +119,29 @@ export default function RoastForm() {
     }
   }
 
+  function handleImageFromFile(file) {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const img = new Image();
+  img.onload = () => {
+    const maxSize = 800;
+    let w = img.width, h = img.height;
+    if (w > maxSize || h > maxSize) {
+      if (w > h) { h = (h / w) * maxSize; w = maxSize; }
+      else { w = (w / h) * maxSize; h = maxSize; }
+    }
+    canvas.width = w;
+    canvas.height = h;
+    ctx.drawImage(img, 0, 0, w, h);
+    const resized = canvas.toDataURL("image/jpeg", 0.7);
+    setImagePreview(resized);
+    setImage(resized.split(",")[1]);
+    setCsvName("");
+    setCsvData(null);
+  };
+  img.src = URL.createObjectURL(file);
+}
+
   return (
     <div className="space-y-4">
       {/* Category */}
@@ -147,7 +170,7 @@ export default function RoastForm() {
       </div>
 
       {/* File Upload (CSV, Excel, Word, PDF) */}
-      <div>
+      {/* <div>
         <label
           className="text-sm mb-1 block"
           style={{ color: "var(--text-muted)" }}
@@ -211,10 +234,10 @@ export default function RoastForm() {
             onChange={(e) => handleFile(e.target.files[0])}
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Upload ảnh */}
-      <div>
+      {/* <div>
         <label
           className="text-sm mb-1 block"
           style={{ color: "var(--text-muted)" }}
@@ -260,8 +283,108 @@ export default function RoastForm() {
             {t.removeImage}
           </button>
         )}
-      </div>
+      </div> */}
 
+      {/* Upload gộp */}
+      <div>
+        <label
+          className="text-sm mb-1 block"
+          style={{ color: "var(--text-muted)" }}
+        >
+          {t.labelUpload}
+        </label>
+        <div
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragging(false);
+            const file = e.dataTransfer.files[0];
+            if (file?.type.startsWith("image/")) {
+              handleImageFromFile(file);
+            } else {
+              handleFile(file);
+            }
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full border-2 border-dashed rounded-xl p-4 text-center
+               transition-colors cursor-pointer min-h-28"
+          style={{
+            borderColor: isDragging ? "#f97316" : "var(--border)",
+            backgroundColor: isDragging ? "#fff7ed" : "var(--bg-card)",
+          }}
+        >
+          {imagePreview ? (
+            <div>
+              <img
+                src={imagePreview}
+                alt="preview"
+                className="max-h-40 mx-auto object-contain rounded-xl mb-2"
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setImage(null);
+                  setImagePreview(null);
+                }}
+                className="text-xs text-red-400 hover:text-red-500"
+              >
+                {t.removeFile}
+              </button>
+            </div>
+          ) : csvName ? (
+            <div>
+              <p
+                className="text-sm font-medium"
+                style={{ color: "var(--text)" }}
+              >
+                📄 {csvName}
+              </p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {csvData?.split("\n").length} {t.uploadedLines}
+              </p>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCsvData(null);
+                  setCsvName("");
+                  setContent("");
+                }}
+                className="text-xs text-red-400 hover:text-red-500 mt-1"
+              >
+                {t.removeFile}
+              </button>
+            </div>
+          ) : (
+            <div>
+              <p className="text-2xl mb-1">📎</p>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                {t.uploadHint}
+              </p>
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.csv,.xlsx,.xls,.docx,.pdf"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file?.type.startsWith("image/")) {
+                handleImageFromFile(file);
+              } else {
+                handleFile(file);
+              }
+            }}
+          />
+        </div>
+      </div>
       {/* Content */}
       <div>
         <label

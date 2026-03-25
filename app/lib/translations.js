@@ -2,7 +2,8 @@ export const translations = {
   vi: {
     appName: "Roast My Work",
     hero: "AI sẽ thiêu rụi work của bạn",
-    heroSub: "Paste design, code, bài viết vào đây. Nhận feedback hài hước nhưng có ích.",
+    heroSub:
+      "Paste design, code, bài viết vào đây. Nhận feedback hài hước nhưng có ích.",
     labelCategory: "Loại work",
     labelContent: "Nội dung cần roast",
     labelImage: "Upload ảnh (tuỳ chọn)",
@@ -21,11 +22,16 @@ export const translations = {
     savage: "Thiêu rụi 💀",
     clickImage: "Click để chọn ảnh",
     removeImage: "Xoá ảnh",
+    labelUpload: "Upload file hoặc ảnh (tuỳ chọn)",
+    uploadHint: "Kéo thả hoặc click — ảnh, CSV, Excel, Word, PDF",
+    uploadedLines: "dòng đã load",
+    removeFile: "Xoá file",
   },
   en: {
     appName: "Roast My Work",
     hero: "Let AI roast your work",
-    heroSub: "Paste your design, code, or writing. Get funny but useful feedback.",
+    heroSub:
+      "Paste your design, code, or writing. Get funny but useful feedback.",
     labelCategory: "Work type",
     labelContent: "Content to roast",
     labelImage: "Upload image (optional)",
@@ -44,11 +50,16 @@ export const translations = {
     savage: "Savage 💀",
     clickImage: "Click to upload image",
     removeImage: "Remove image",
+    labelUpload: "Upload file or image (optional)",
+    uploadHint: "Drag & drop or click — image, CSV, Excel, Word, PDF",
+    uploadedLines: "rows loaded",
+    removeFile: "Remove file",
   },
   ja: {
     appName: "Roast My Work",
     hero: "AIがあなたの作品を評価します",
-    heroSub: "デザイン、コード、文章を貼り付けてください。面白くて役立つフィードバックをお届けします。",
+    heroSub:
+      "デザイン、コード、文章を貼り付けてください。面白くて役立つフィードバックをお届けします。",
     labelCategory: "作品の種類",
     labelContent: "評価してほしい内容",
     labelImage: "画像をアップロード（任意）",
@@ -67,5 +78,10 @@ export const translations = {
     savage: "容赦なし 💀",
     clickImage: "クリックして画像を選択",
     removeImage: "画像を削除",
+    labelUpload: "ファイルまたは画像をアップロード（任意）",
+    uploadHint:
+      "ドラッグ＆ドロップまたはクリック — 画像・CSV・Excel・Word・PDF",
+    uploadedLines: "行を読み込みました",
+    removeFile: "ファイルを削除",
   },
 };
