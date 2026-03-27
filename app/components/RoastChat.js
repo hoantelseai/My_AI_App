@@ -50,6 +50,9 @@ export default function RoastChat({ roast, category, originalContent }) {
   async function handleSend() {
     if ((!input.trim() && !chatImage) || loading) return;
 
+    const currentImage = chatImage;
+    const currentImagePreview = chatImagePreview;
+    const currentInput = input;
     const userMsg = {
       role: "user",
       content:
@@ -93,19 +96,20 @@ export default function RoastChat({ roast, category, originalContent }) {
         });
 
       // Thêm tin nhắn hiện tại
-      if (chatImage) {
+      // ✅currentImage 
+      if (currentImage) {
         apiMessages.push({
           role: "user",
           content: [
             {
               type: "image_url",
-              image_url: { url: `data:image/jpeg;base64,${chatImage}` },
+              image_url: { url: `data:image/jpeg;base64,${currentImage}` },
             },
-            { type: "text", text: input || "Roast ảnh này" },
+            { type: "text", text: currentInput || "Roast ảnh này" },
           ],
         });
       } else {
-        apiMessages.push({ role: "user", content: input });
+        apiMessages.push({ role: "user", content: currentInput });
       }
 
       const res = await fetch("/api/chat", {
@@ -116,9 +120,10 @@ export default function RoastChat({ roast, category, originalContent }) {
           originalContent,
           originalRoast: roast.roastText,
           category,
-          hasImage: !!chatImage,
+          hasImage: !!currentImage, // currentImage
         }),
       });
+
       const data = await res.json();
       setMessages((prev) => [
         ...prev,
