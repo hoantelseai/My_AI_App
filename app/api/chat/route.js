@@ -33,7 +33,7 @@ Bây giờ người dùng muốn tiếp tục thảo luận. Hãy:
             ? "meta-llama/llama-4-scout-17b-16e-instruct"
             : "llama-3.3-70b-versatile",
           messages: [{ role: "system", content: systemPrompt }, ...messages],
-          max_tokens: 500,
+          max_tokens: 1500,
         }),
       },
     );
