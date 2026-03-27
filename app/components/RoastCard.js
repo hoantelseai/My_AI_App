@@ -15,7 +15,7 @@ export default function RoastCard({ roast, category, originalContent }) {
 
   return (
     <div className="space-y-2 mt-2">
-      <div className="border rounded-2xl p-4 space-y-3"
+      {/* <div className="border rounded-2xl p-4 space-y-3"
         style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}>
         <div>
           <p className="text-xs font-medium text-orange-400 mb-1">{t.roastLabel}</p>
@@ -32,7 +32,7 @@ export default function RoastCard({ roast, category, originalContent }) {
             ))}
           </ul>
         </div>
-      </div>
+      </div> */}
 
       {/* Chat follow-up */}
       <RoastChat

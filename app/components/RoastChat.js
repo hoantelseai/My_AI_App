@@ -9,7 +9,7 @@ export default function RoastChat({ roast, category, originalContent }) {
     {
       role: "assistant",
       content: roast.roastText,
-    //   tips: roast.tips,
+      tips: roast.tips,
     },
   ]);
   const [input, setInput] = useState("");
@@ -154,7 +154,7 @@ export default function RoastChat({ roast, category, originalContent }) {
                 >
                   {msg.content}
                 </div>
-                {/* {msg.tips && (
+                {msg.tips && (
                   <div
                     className="rounded-xl px-3 py-2"
                     style={{
@@ -178,7 +178,7 @@ export default function RoastChat({ roast, category, originalContent }) {
                       ))}
                     </ul>
                   </div>
-                )} */}
+                )}
               </div>
             ) : (
               <div className="max-w-[85%] space-y-1">
