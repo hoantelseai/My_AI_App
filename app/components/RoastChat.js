@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "../lib/LanguageContext";
 import { pdfToImage } from "../lib/fileReaders";
 import ReactMarkdown from "react-markdown";
@@ -18,6 +18,11 @@ export default function RoastChat({ roast, category, originalContent }) {
   const [chatImage, setChatImage] = useState(null);
   const [chatImagePreview, setChatImagePreview] = useState(null);
   const chatFileRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  //   const scrollRef = useRef(null);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const placeholder =
     lang === "en"
@@ -57,14 +62,14 @@ export default function RoastChat({ roast, category, originalContent }) {
     const userMsg = {
       role: "user",
       content:
-        input ||
+        currentInput ||
         (lang === "en"
           ? "Please roast this image"
           : lang === "ja"
             ? "この画像を評価してください"
             : "Roast ảnh này"),
-      image: chatImage,
-      imagePreview: chatImagePreview,
+      image: currentImage,
+      imagePreview: currentImagePreview,
     };
     const newMessages = [
       ...messages.filter((m) => m.role !== "assistant" || !m.tips),
@@ -75,6 +80,8 @@ export default function RoastChat({ roast, category, originalContent }) {
     setChatImage(null);
     setChatImagePreview(null);
     setLoading(true);
+
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
     try {
       // Build messages array cho API
@@ -125,17 +132,40 @@ export default function RoastChat({ roast, category, originalContent }) {
         }),
       });
 
-      const data = await res.json();
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.reply },
-      ]);
+      // stream text
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: updated[updated.length - 1].content + chunk,
+          };
+          return updated;
+        });
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
   }
+  //       const data = await res.json();
+  //       setMessages((prev) => [
+  //         ...prev,
+  //         { role: "assistant", content: data.reply },
+  //       ]);
+  //     } catch (err) {
+  //       console.error(err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   }
 
   return (
     <div
@@ -247,6 +277,7 @@ export default function RoastChat({ roast, category, originalContent }) {
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Preview ảnh đang chọn */}
