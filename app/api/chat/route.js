@@ -15,7 +15,9 @@ Bây giờ người dùng muốn tiếp tục thảo luận. Hãy:
 - Nếu họ muốn roast mạnh/nhẹ hơn thì điều chỉnh
 - Nếu họ phản bác thì defend quan điểm nhưng vẫn lịch sự
 - Trả lời ngắn gọn, tối đa 3-4 câu
-- KHÔNG trả về JSON, trả về text bình thường`;
+- KHÔNG trả về JSON, trả về text bình thường
+- QUAN TRỌNG: Hãy trả lời bằng ngôn ngữ mà người dùng đang dùng để nhắn tin`;
+
 
   try {
     const response = await fetch(
