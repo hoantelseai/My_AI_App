@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "../lib/LanguageContext";
 import { pdfToImage } from "../lib/fileReaders";
 import ReactMarkdown from "react-markdown";
+
 export default function RoastChat({ roast, category, originalContent }) {
   const { lang } = useLanguage();
   const [messages, setMessages] = useState([
@@ -19,7 +20,6 @@ export default function RoastChat({ roast, category, originalContent }) {
   const chatFileRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  //   const scrollRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -32,6 +32,7 @@ export default function RoastChat({ roast, category, originalContent }) {
         : "Hỏi thêm, phản bác, hoặc upload ảnh mới...";
 
   const sendLabel = lang === "en" ? "Send" : lang === "ja" ? "送信" : "Gửi";
+
   async function handleChatFile(file) {
     if (!file) return;
     try {
@@ -56,9 +57,11 @@ export default function RoastChat({ roast, category, originalContent }) {
   async function handleSend() {
     if ((!input.trim() && !chatImage) || loading) return;
 
+    // Lưu lại giá trị hiện tại trước khi clear
     const currentImage = chatImage;
     const currentImagePreview = chatImagePreview;
     const currentInput = input;
+
     const userMsg = {
       role: "user",
       content:
@@ -71,40 +74,36 @@ export default function RoastChat({ roast, category, originalContent }) {
       image: currentImage,
       imagePreview: currentImagePreview,
     };
-    const newMessages = [
-      ...messages.filter((m) => m.role !== "assistant" || !m.tips),
-      userMsg,
-    ];
+
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setChatImage(null);
     setChatImagePreview(null);
     setLoading(true);
 
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
-
     try {
-      // Build messages array cho API
-      const apiMessages = messages
+      // Chỉ giữ 6 tin nhắn gần nhất để tránh vượt token limit
+      const recentMessages = messages
         .filter((m) => m.role !== "assistant" || !m.tips)
-        .map((m) => {
-          if (m.image) {
-            return {
-              role: m.role,
-              content: [
-                {
-                  type: "image_url",
-                  image_url: { url: `data:image/jpeg;base64,${m.image}` },
-                },
-                { type: "text", text: m.content },
-              ],
-            };
-          }
-          return { role: m.role, content: m.content };
-        });
+        .slice(-6);
+
+      const apiMessages = recentMessages.map((m) => {
+        if (m.image) {
+          return {
+            role: m.role,
+            content: [
+              {
+                type: "image_url",
+                image_url: { url: `data:image/jpeg;base64,${m.image}` },
+              },
+              { type: "text", text: m.content },
+            ],
+          };
+        }
+        return { role: m.role, content: m.content };
+      });
 
       // Thêm tin nhắn hiện tại
-      // ✅currentImage
       if (currentImage) {
         apiMessages.push({
           role: "user",
@@ -128,44 +127,57 @@ export default function RoastChat({ roast, category, originalContent }) {
           originalContent,
           originalRoast: roast.roastText,
           category,
-          hasImage: !!currentImage, // currentImage
+          hasImage: !!currentImage,
         }),
       });
 
-      // stream text
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
+      const data = await res.json();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = {
-            role: "assistant",
-            content: updated[updated.length - 1].content + chunk,
-          };
-          return updated;
-        });
+      // Xử lý lỗi từ API
+      if (data.error) {
+        const errorMsg =
+          data.error === "token_limit"
+            ? lang === "en"
+              ? "Conversation too long! Please start a new chat."
+              : lang === "ja"
+                ? "会話が長すぎます！新しいチャットを始めてください。"
+                : "Cuộc trò chuyện quá dài! Hãy bắt đầu chat mới nhé."
+            : lang === "en"
+              ? "Something went wrong, please try again."
+              : lang === "ja"
+                ? "エラーが発生しました。もう一度お試しください。"
+                : "Có lỗi xảy ra, thử lại nhé.";
+
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: errorMsg, isError: true },
+        ]);
+        return;
       }
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: data.reply },
+      ]);
     } catch (err) {
       console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            lang === "en"
+              ? "Something went wrong, please try again."
+              : lang === "ja"
+                ? "エラーが発生しました。もう一度お試しください。"
+                : "Có lỗi xảy ra, thử lại nhé.",
+          isError: true,
+        },
+      ]);
     } finally {
       setLoading(false);
     }
   }
-  //       const data = await res.json();
-  //       setMessages((prev) => [
-  //         ...prev,
-  //         { role: "assistant", content: data.reply },
-  //       ]);
-  //     } catch (err) {
-  //       console.error(err);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   }
 
   return (
     <div
@@ -186,7 +198,11 @@ export default function RoastChat({ roast, category, originalContent }) {
               <div className="max-w-[85%] space-y-2">
                 <div
                   className="rounded-2xl rounded-tl-none px-3 py-2 text-sm leading-relaxed"
-                  style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
+                  style={{
+                    backgroundColor: "var(--bg)",
+                    color: msg.isError ? "#f97316" : "var(--text)",
+                    border: msg.isError ? "1px solid #f97316" : "none",
+                  }}
                   suppressHydrationWarning
                 >
                   <ReactMarkdown
@@ -306,7 +322,6 @@ export default function RoastChat({ roast, category, originalContent }) {
         className="border-t flex gap-2 p-3"
         style={{ borderColor: "var(--border)" }}
       >
-        {/* Nút upload ảnh */}
         <input
           type="file"
           accept="image/*,.pdf"

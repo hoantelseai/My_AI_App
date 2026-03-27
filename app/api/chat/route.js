@@ -34,7 +34,7 @@ Bây giờ người dùng muốn tiếp tục thảo luận. Hãy:
         max_tokens: 1500,
         stream: true,
       }),
-    }
+    },
   );
 
   const encoder = new TextEncoder();
@@ -68,3 +68,24 @@ Bây giờ người dùng muốn tiếp tục thảo luận. Hãy:
     headers: { "Content-Type": "text/plain; charset=utf-8" },
   });
 }
+
+const data = await response.json();
+
+// ✅ Thêm check lỗi token limit
+if (data.error) {
+  const isTokenLimit =
+    data.error.code === "rate_limit_exceeded" ||
+    data.error.message?.includes("token") ||
+    data.error.message?.includes("context");
+
+  return Response.json(
+    {
+      error: isTokenLimit ? "token_limit" : "api_error",
+      message: data.error.message,
+    },
+    { status: 400 },
+  );
+}
+
+const text = data.choices[0].message.content;
+return Response.json({ reply: text });
