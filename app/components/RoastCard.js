@@ -36,7 +36,7 @@ export default function RoastCard({ roast, category, originalContent }) {
 
       {/* Chat follow-up */}
       <RoastChat
-        roast={{ ...roast, roastText }}
+        roast={{ ...roast, roastText, tips }}  
         category={category}
         originalContent={originalContent}
       />
