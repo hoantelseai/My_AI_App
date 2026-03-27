@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { useLanguage } from "../lib/LanguageContext";
 import { pdfToImage } from "../lib/fileReaders";
+import ReactMarkdown from "react-markdown";
 
 export default function RoastChat({ roast, category, originalContent }) {
   const { lang } = useLanguage();
@@ -96,7 +97,7 @@ export default function RoastChat({ roast, category, originalContent }) {
         });
 
       // Thêm tin nhắn hiện tại
-      // ✅currentImage 
+      // ✅currentImage
       if (currentImage) {
         apiMessages.push({
           role: "user",
@@ -157,7 +158,32 @@ export default function RoastChat({ roast, category, originalContent }) {
                   className="rounded-2xl rounded-tl-none px-3 py-2 text-sm leading-relaxed"
                   style={{ backgroundColor: "var(--bg)", color: "var(--text)" }}
                 >
-                  {msg.content}
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => (
+                        <p className="mb-1 last:mb-0">{children}</p>
+                      ),
+                      strong: ({ children }) => (
+                        <strong className="font-semibold">{children}</strong>
+                      ),
+                      h3: ({ children }) => (
+                        <p className="font-semibold mt-1">{children}</p>
+                      ),
+                      ul: ({ children }) => (
+                        <ul className="list-disc pl-4 space-y-0.5">
+                          {children}
+                        </ul>
+                      ),
+                      ol: ({ children }) => (
+                        <ol className="list-decimal pl-4 space-y-0.5">
+                          {children}
+                        </ol>
+                      ),
+                      li: ({ children }) => <li>{children}</li>,
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
                 </div>
                 {msg.tips && (
                   <div
