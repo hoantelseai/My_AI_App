@@ -1,7 +1,8 @@
 "use client";
 import { useLanguage } from "../lib/LanguageContext";
+import RoastChat from "./RoastChat";
 
-export default function RoastCard({ roast }) {
+export default function RoastCard({ roast, category, originalContent }) {
   const { t, lang } = useLanguage();
 
   const roastText = lang === "en" ? (roast.roastTextEn || roast.roastText)
@@ -13,23 +14,32 @@ export default function RoastCard({ roast }) {
              : roast.tips;
 
   return (
-    <div className="rounded-2xl p-4 space-y-3 mt-2 border"
-      style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}>
-      <div>
-        <p className="text-xs font-medium text-orange-400 mb-1">{t.roastLabel}</p>
-        <p className="text-sm leading-relaxed" style={{ color: "var(--text)" }}>{roastText}</p>
+    <div className="space-y-2 mt-2">
+      <div className="border rounded-2xl p-4 space-y-3"
+        style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}>
+        <div>
+          <p className="text-xs font-medium text-orange-400 mb-1">{t.roastLabel}</p>
+          <p className="text-sm leading-relaxed" style={{ color: "var(--text)" }}>{roastText}</p>
+        </div>
+        <div className="border-t pt-3" style={{ borderColor: "var(--border)" }}>
+          <p className="text-xs font-medium text-teal-500 mb-2">{t.tipsLabel}</p>
+          <ul className="space-y-1">
+            {tips.map((tip, i) => (
+              <li key={i} className="text-sm flex gap-2" style={{ color: "var(--text-muted)" }}>
+                <span className="text-teal-400 font-medium mt-0.5">•</span>
+                {tip}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-      <div className="border-t pt-3" style={{ borderColor: "var(--border)" }}>
-        <p className="text-xs font-medium text-teal-500 mb-2">{t.tipsLabel}</p>
-        <ul className="space-y-1">
-          {tips.map((tip, i) => (
-            <li key={i} className="text-sm flex gap-2" style={{ color: "var(--text-muted)" }}>
-              <span className="text-teal-400 font-medium mt-0.5">•</span>
-              {tip}
-            </li>
-          ))}
-        </ul>
-      </div>
+
+      {/* Chat follow-up */}
+      <RoastChat
+        roast={{ ...roast, roastText }}
+        category={category}
+        originalContent={originalContent}
+      />
     </div>
   );
 }
