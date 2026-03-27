@@ -243,6 +243,25 @@ export default function RoastChat({ roast, category, originalContent }) {
         className="border-t flex gap-2 p-3"
         style={{ borderColor: "var(--border)" }}
       >
+        {/* Nút upload ảnh */}
+        <input
+          type="file"
+          accept="image/*,.pdf"
+          ref={chatFileRef}
+          className="hidden"
+          onChange={(e) => handleChatFile(e.target.files[0])}
+        />
+        <button
+          onClick={() => chatFileRef.current?.click()}
+          className="px-3 py-2 rounded-xl border text-sm hover:bg-orange-50 transition-colors flex items-center gap-1"
+          style={{
+            borderColor: "var(--border)",
+            color: "var(--text-muted)",
+          }}
+          title="Upload ảnh hoặc PDF"
+        >
+          📎
+        </button>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -258,7 +277,7 @@ export default function RoastChat({ roast, category, originalContent }) {
         />
         <button
           onClick={handleSend}
-          disabled={loading || !input.trim()}
+          disabled={loading || (!input.trim() && !chatImage)}
           className="px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium
                      hover:bg-orange-600 disabled:opacity-40 transition-colors"
         >
