@@ -81,6 +81,9 @@ export default function RoastChat({ roast, category, originalContent }) {
     setChatImagePreview(null);
     setLoading(true);
 
+    // Thêm bubble rỗng cho AI — sẽ được fill dần bằng stream
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
     try {
       // Chỉ giữ 6 tin nhắn gần nhất để tránh vượt token limit
       const recentMessages = messages
@@ -131,12 +134,11 @@ export default function RoastChat({ roast, category, originalContent }) {
         }),
       });
 
-      const data = await res.json();
-
-      // Xử lý lỗi từ API
-      if (data.error) {
+      // Nếu server trả lỗi JSON (token limit, api error...)
+      if (!res.ok) {
+        const errData = await res.json();
         const errorMsg =
-          data.error === "token_limit"
+          errData.error === "token_limit"
             ? lang === "en"
               ? "Conversation too long! Please start a new chat."
               : lang === "ja"
@@ -148,22 +150,40 @@ export default function RoastChat({ roast, category, originalContent }) {
                 ? "エラーが発生しました。もう一度お試しください。"
                 : "Có lỗi xảy ra, thử lại nhé.";
 
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: errorMsg, isError: true },
-        ]);
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: errorMsg,
+            isError: true,
+          };
+          return updated;
+        });
         return;
       }
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.reply },
-      ]);
+      // Đọc stream và fill dần vào bubble cuối
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: updated[updated.length - 1].content + chunk,
+          };
+          return updated;
+        });
+      }
     } catch (err) {
       console.error(err);
-      setMessages((prev) => [
-        ...prev,
-        {
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
           role: "assistant",
           content:
             lang === "en"
@@ -172,8 +192,9 @@ export default function RoastChat({ roast, category, originalContent }) {
                 ? "エラーが発生しました。もう一度お試しください。"
                 : "Có lỗi xảy ra, thử lại nhé.",
           isError: true,
-        },
-      ]);
+        };
+        return updated;
+      });
     } finally {
       setLoading(false);
     }

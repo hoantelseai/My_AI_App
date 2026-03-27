@@ -18,74 +18,89 @@ Bây giờ người dùng muốn tiếp tục thảo luận. Hãy:
 - KHÔNG trả về JSON, trả về text bình thường
 - QUAN TRỌNG: Hãy trả lời bằng ngôn ngữ mà người dùng đang dùng để nhắn tin`;
 
-  const response = await fetch(
-    "https://api.groq.com/openai/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${GROQ_API_KEY}`,
+  try {
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: hasImage
+            ? "meta-llama/llama-4-scout-17b-16e-instruct"
+            : "llama-3.3-70b-versatile",
+          messages: [{ role: "system", content: systemPrompt }, ...messages],
+          max_tokens: 1500,
+          stream: true,
+        }),
       },
-      body: JSON.stringify({
-        model: hasImage
-          ? "meta-llama/llama-4-scout-17b-16e-instruct"
-          : "llama-3.3-70b-versatile",
-        messages: [{ role: "system", content: systemPrompt }, ...messages],
-        max_tokens: 1500,
-        stream: true,
-      }),
-    },
-  );
+    );
 
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
-        for (const line of lines) {
-          const data = line.replace("data: ", "");
-          if (data === "[DONE]") {
-            controller.close();
-            return;
+    // Nếu Groq trả lỗi (không phải stream)
+    if (!response.ok) {
+      const errData = await response.json();
+      const isTokenLimit =
+        errData.error?.code === "rate_limit_exceeded" ||
+        errData.error?.message?.includes("token") ||
+        errData.error?.message?.includes("context");
+
+      return Response.json(
+        {
+          error: isTokenLimit ? "token_limit" : "api_error",
+          message: errData.error?.message,
+        },
+        { status: 400 },
+      );
+    }
+
+    // Stream response về client
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk
+              .split("\n")
+              .filter((l) => l.startsWith("data: "));
+
+            for (const line of lines) {
+              const data = line.replace("data: ", "").trim();
+              if (data === "[DONE]") {
+                controller.close();
+                return;
+              }
+              try {
+                const parsed = JSON.parse(data);
+                const text = parsed.choices[0]?.delta?.content || "";
+                if (text) controller.enqueue(encoder.encode(text));
+              } catch {}
+            }
           }
-          try {
-            const parsed = JSON.parse(data);
-            const text = parsed.choices[0]?.delta?.content || "";
-            if (text) controller.enqueue(encoder.encode(text));
-          } catch {}
+        } catch (err) {
+          controller.error(err);
+        } finally {
+          controller.close();
         }
-      }
-      controller.close();
-    },
-  });
+      },
+    });
 
-  return new Response(stream, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
+    return new Response(stream, {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  } catch (err) {
+    console.error("Chat lỗi:", err.message);
+    return Response.json(
+      { error: "api_error", message: err.message },
+      { status: 500 },
+    );
+  }
 }
-
-const data = await response.json();
-
-// ✅ Thêm check lỗi token limit
-if (data.error) {
-  const isTokenLimit =
-    data.error.code === "rate_limit_exceeded" ||
-    data.error.message?.includes("token") ||
-    data.error.message?.includes("context");
-
-  return Response.json(
-    {
-      error: isTokenLimit ? "token_limit" : "api_error",
-      message: data.error.message,
-    },
-    { status: 400 },
-  );
-}
-
-const text = data.choices[0].message.content;
-return Response.json({ reply: text });
