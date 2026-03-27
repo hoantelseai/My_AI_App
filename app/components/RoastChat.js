@@ -2,8 +2,8 @@
 import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "../lib/LanguageContext";
 import { pdfToImage } from "../lib/fileReaders";
-import ReactMarkdown from "react-markdown";
-
+// import ReactMarkdown from "react-markdown";
+import dynamic from "next/dynamic";
 export default function RoastChat({ roast, category, originalContent }) {
   const { lang } = useLanguage();
   const [messages, setMessages] = useState([
@@ -19,6 +19,7 @@ export default function RoastChat({ roast, category, originalContent }) {
   const [chatImagePreview, setChatImagePreview] = useState(null);
   const chatFileRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
   //   const scrollRef = useRef(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
