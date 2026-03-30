@@ -130,7 +130,7 @@ export default function RoastChat({ roast, category, originalContent }) {
           originalContent,
           originalRoast: roast.roastText,
           category,
-          hasImage: !!currentImage,
+          hasImage: !!currentImage || recentMessages.some((m) => !!m.image),
         }),
       });
 
